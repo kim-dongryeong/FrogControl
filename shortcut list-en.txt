@@ -1,0 +1,138 @@
+﻿[Move window by mouse]
+CapsLock  + Click and drag 	Move window (Ctrl to focus window, Esc to cancel) 
+	(Draging window to a corner or an edge will resize as a half/quarter the screen)
+CapsLock + Shift + Click and drag	Move window horizontaly or vertically
+CapsLock + Ctrl + Click 	Activate window without clicking 
+	
+[Resize window by mouse]
+CapsLock  + Right-click and drag	resize window (Ctrl to focus window, Esc to cancel)
+	
+[Mouse Wheel Scroll speed up and down]
+CapsLock + Wheel Scroll 	Mouse scroll speed up level 1
+CapsLock + CapsLock + Wheel Scroll 	Mouse scroll speed up level 2
+CapsLock + CapsLock + CapsLock + Wheel Scroll 	Mouse scroll speed up level 3
+CapsLock + CapsLock + ... + CapsLock + Wheel Scroll  	Even faster...
+CapsLock + ` + Wheel Scroll	Mouse scroll slow (only one line each)
+	
+[Volume control]
+Win + Wheel Scroll 	Adjust volume
+Win + Ctrl + Wheel Scroll 	Adjust volume slightly
+Win + [ or ] 	Adjust volume
+Win + Ctrl + [ or ] 	Adjust volume slightly
+	
+[Move window by keyboard]
+CapsLock + Win + Arrow Keys 	Move window
+CapsLock + Shift + Arrow Keys 	Move window to the screen edge
+	
+[Move window in a grid by keyboard]
+CapsLock + Ctrl + Arrow Keys 	Resize a window as 1/2 screen height and width, and move in the 2 * 2 grid
+CapsLock + Ctrl + Ctrl + Arrow Keys 	Resize a window as 1/3 screen height and width, and move in the 3 * 3 grid
+CapsLock + Ctrl + Ctrl + Ctrl + Arrow Keys 	Resize a window as 1/4 screen height and width, and move in the 4 * 4 grid
+CapsLock + Ctrl + Ctrl + ... + Ctrl + Arrow Keys 	Like above with 1/n screen height and width, and in the n * n grid
+	
+[Resize window by keyboard]
+Win + Alt + Arrow Keys 	Resize window outward (getting bigger)
+Win + Alt + X + Arrow Keys 	Resize window inward (getting smaller)
+Win + Alt + Shift + Arrow Keys 	Resize window to the screen edge
+	
+[Operate window]
+Control + Shift + Right-click 	Close a tab (like Ctrl + W)
+Control + Shift + Alt + Right-click 	Close a window (like Alt + F4)
+Alt + Right-click 	Minimize a window (like Win + ↓)
+Alt + Shift + Right-click 	Send a window to the bottom of stack (like Alt + Esc)
+Control + Shift + Wheel Scroll 	Move to next tab (like Ctrl + Page Up/Down)
+	
+[Arrange windows]
+Shift + F1	Rearrange and show off all File Explorers
+Shift + F2	Rearrange and show off all File Explorers in a grid
+Shift + F3	Rearrange and show off all the same type of windows of the current active one
+Shift + F4	Rearrange and show off all the same type of windows of the current active one in a grid
+	
+[Transparency and Always on top]
+Win + A 	Put window Always on top
+Win + Click	Put window Always on top
+Win + Alt + Wheel Scroll	Adjust window transparency
+Win + Alt + [ or ] 	Adjust window transparency
+	
+[Window navigation]
+Ctrl + Alt + Wheel Scroll 	rotational view of windows (while stacking)
+Ctrl + Alt + [ or ] 	rotational view of windows (while stacking)
+Ctrl + Alt + Win + Wheel Scroll 	rotational view of windows (without stacking) (not stable)
+Ctrl + Alt + Win + [ or ] 	rotational view of windows (without stacking) (not stable)
+Shift + Alt + Win + Wheel Scroll	rotational view of windows of the same application
+Shift + Alt + Win + [ or ]	rotational view of windows of the same application
+Alt (+ Shift) + `	rotational view of windows of the same application
+Ctrl + Alt + Win + Arrow Keys 	navigating windows with Arrow Keys (not stable) 
+	
+[Date and Time Input Mode]
+CapsLock + O 	Enter the Date and Time Input Mode (with the initial format YYMMDD)
+[[In the mode, press the following buttons to change the format]]
+O 	Toggle between YYYY and YY (and change to the date)
+P 	Toggle between hhmmss and hhmm (and change to the time)
+0 	Change the order of YY, MM, DD (Asian order (YY-MM-DD), European order (DD-MM-YY) and American order (MM-DD-YY))
+Any symbols (ex. : - . /)	Insert a symbol among numbers (ex. 85-10-09, 85/10/09, 18:01)
+Enter 	Input the current date or time in the current format
+?	Show the help
+Esc	Cancel the mode
+[[Examples]]
+CapsLock + O and press Enter	Input the current date in YYMMDD (ex. 120426)
+CapsLock + O and press O Enter 	Input the current date in YYYYMMDD (ex. 19850530)
+CapsLock + O and press - Enter 	Input the current date in YY-MM-DD (ex. 85-05-30)
+CapsLock + O and press O - Enter 	Input the current date in YYYY-MM-DD (ex. 1985-05-30)
+CapsLock + O and press O . Enter 	Input the current date in YYYY.MM.DD (ex. 1985.05.30)
+CapsLock + O and press O 0 . Enter 	Input the current date in DD.MM.YYYY (ex. 30.05.1985)
+CapsLock + O and press P Enter 	Input the current time in hhmm (ex. 1359)
+CapsLock + O and press P P Enter 	Input the current time in hhmmss (ex. 135943)
+CapsLock + O and press P P : Enter 	Input the current time in hh:mm:ss (ex. 13:59:43)
+	
+[Mouse Control Mode]
+CapsLock + M 	Enter the Mouse Control Mode
+[[In the mode, press]]
+Any number in pixel followed by an arrow key 	Move the mouse for the pixels to the direction
+CapsLock + Arrow key 	Move the mouse pointer by the keyboard (hold Alt, Shift or Ctrl to change the speed)
++ 	Enter the Mouse Constrained Mode (Press SpaceBar to move the mouse pointer back to the original position)
+R 	Enter the Mouse Ruler Mode (Then press SpaceBar to set the reference point)
+W 	Move the mouse pointer to the center of a current window (CapsLock + R is better)
+C 	Show the current coordinates (CapsLock + + is better)
+? 	Open the help
+Esc 	Cancel
+	
+[Mouse Clicks and Wheel Scrolls]
+CapsLock + Z 	Click
+CapsLock + X 	Middle-click (Wheel-click)
+CapsLock + C 	Right-click
+CapsLock + W 	Wheel Scroll up
+CapsLock + S 	Wheel Scroll down
+CapsLock + A 	Wheel Scroll left
+CapsLock + D 	Wheel Scroll right
+	
+[Mouse bookmark at 1, 2, 3, ..., 9, 0]
+CapsLock + Ctrl + 1 	Bookmark the current position at 1
+CapsLock + 1 	Click on the mouse bookmark at 1
+CapsLock + Shift + 1 	Move the mouse pointer to the mouse bookmark at 1 (without clicking)
+CapsLock + Alt + 1 	Delete the mouse bookmark at 1
+CapsLock + Ctrl + Shift + 1 	Show the position of the mouse bookmark at 1
+	
+[Window bookmark at F1, F2, F3, ... , F9]
+CapsLock + Ctrl + F1 	Save the current window as Window Bookmark F1
+CapsLock + F1 	Activate the Window Bookmark F1
+CapsLock + F2 	Activate the Window Bookmark F2
+CapsLock + F1 ~ F9 	Activate the Window Bookmark F1 ~ F9
+CapsLock + F10 	Show a list of all Window Boomark F1 ~ F9
+	
+[Mouse coordinates and Constrained]
+CapsLock + + 	Mouse coordinates
+CapsLock + + + + 	Make mouse Constrained (horizontaly or vertically)
+	
+[Others]
+CapsLock + R 	Move the mouse cursor to the center of the active window
+CapsLock + E 	Move the active window to the mouse cursor
+	
+[FrogControl menu]
+CapsLock + ?	Help menu of FrogControl
+CapsLock + F12 	Disable and enable FrogControl
+	
+[Advanced]
+Win + Shift + F1	Make all pixels of the pixel color under the mouse pointer invisible inside the current window 
+Win + Shift + F2	Remove the title bar and borders - 1
+Win + Shift + F3	Remove the title bar and borders - 2
