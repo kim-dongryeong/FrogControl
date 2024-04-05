@@ -1,0 +1,138 @@
+﻿[마우스로 윈도우창 움직이기]
+CapsLock  + 클릭 후 드래그 	윈도우 움직이기 (Ctrl : 윈도우 활성화, Esc : 취소) 
+	(화면 모서리나 테두리로 가져가면 화면의 1/2 또는 1/4 크기로 위도우창 크기가 자동으로 바뀜)
+CapsLock + Shift + 클릭 후 드래그	윈도우를 수평 또는 수직으로 움직임
+CapsLock + Ctrl + Click 	클릭 없이 윈도우창을 활성화 하기
+
+[윈도우창 크기 조절]
+CapsLock  + 우클릭 후 드래그	윈도우 크기 조절 (Ctrl : 윈도우 활성화, Esc : 취소) 
+	
+[마우스 휠 스크롤 속도 빠르게, 느리게]
+CapsLock + 휠마우스 스크롤 	마우스 스크롤 스피드 레벨 업 1
+CapsLock + CapsLock + 휠마우스 스크롤 	마우스 스크롤 스피드 레벨 업 2
+CapsLock + CapsLock + CapsLock + 휠마우스 스크롤 	마우스 스크롤 스피드 레벨 업 3
+CapsLock + CapsLock + ... + CapsLock + 휠마우스 스크롤	더 빠르게...
+CapsLock + ` + 휠마우스 스크롤	마우스 스크롤 느리게 (한 줄씩)
+	
+[음량 조절]
+Win + 휠 스크롤 	음량 조절하기
+Win + Ctrl + 휠 스크롤 	음량 조절하기 조금씩
+Win + [ 또는 ] 	음량 조절하기
+Win + Ctrl + [ 또는 ] 	음량 조절하기 조금씩
+	
+[키보드로 윈도우창 움직이기]
+CapsLock + Win + 방향키 	윈도우창 움직이기
+CapsLock + Shift + 방향키 	윈도우창을 화면 끝으로 움직이기
+	
+[키보드로 윈도우창을 그리드 안에서 움직이기]
+CapsLock + Ctrl + 방향키 	윈도우창 가로 세로를 화면의 1/2로 줄인 후 2 * 2 그리드 상에서 움직이기
+CapsLock + Ctrl + Ctrl + 방향키 	윈도우창 가로 세로를 화면의 1/3로 줄인 후 3 * 3 그리드 상에서 움직이기
+CapsLock + Ctrl + Ctrl + Ctrl + 방향키 	윈도우창 가로 세로를 화면의 1/4로 줄인 후 4 * 4 그리드 상에서 움직이기
+CapsLock + Ctrl + Ctrl + ... + Ctrl + 방향키 	마찬가지로 화면의 1/n로 줄인 후 n * n 그리드 상에서 움직이기
+	
+[키보드로 윈도우창 크기 조절하기]
+Win + Alt + 방향키 	윈도우창의 크기를 커지는 방향으로 조절하기 
+Win + Alt + X + 방향키 	윈도우창의 크기를 작아지는 방향으로 조절하기
+Win + Alt + Shift + 방향키 	윈도우창의 한 변을 화면 끝까지 키우기
+	
+[윈도우창 조작하기]
+Control + Shift + 우클릭 	탭 닫기 (Ctrl + W 처럼)
+Control + Shift + Alt + 우클릭 	윈도우창 닫기 (Alt + F4 처럼)
+Alt + 우클릭 	윈도우창 최소화하기 (Win + ↓ 처럼)
+Alt + Shift + 우클릭 	윈도우창을 뒤로 보내기 (Alt + Esc 처럼)
+Control + Shift + 휠 스크롤 	탭간 이동하기 (Ctrl + Page Up 또는 Page Down 처럼)
+	
+[윈도우창 배열하기]
+Shift + F1	파일 익스플로러들을 재배열해서 모두 보여주기 
+Shift + F2	파일 익스플로러들을 그리드 안에서 재배열해서 모두 보여주기
+Shift + F3	같은 종류의 프로그램 창들을 재배열해서 모두 보여주기 
+Shift + F4	같은 종류의 프로그램 창들을 그리드 안에서 재배열해서 모두 보여주기
+	
+[투명도 조절 및 항상 위에 놓기]
+Win + A 	항상 위에 놓기
+Win + Click	항상 위에 놓기
+Win + Alt + 휠마우스 스크롤	투명도 조절하기
+Win + Alt + [ 또는 ] 	투명도 조절하기
+	
+[윈도우창 탐색]
+Ctrl + Alt + 휠 스크롤 	윈도우창을 순환해가며 보기 (쌓는 방식)
+Ctrl + Alt + [ or ] 	윈도우창을 순환해가며 보기 (쌓는 방식)
+Ctrl + Alt + Win + 휠 스크롤 	윈도우창을 순환해가며 보기 (쌓지 않음) (아직 불안정)
+Ctrl + Alt + Win + [ or ] 	윈도우창을 순환해가며 보기 (쌓지 않음) (아직 불안정)
+Shift + Alt + Win + 휠 스크롤	같은 종류의 프로그램 창들을 순환해가며 보기 (쌓는 방식)
+Shift + Alt + Win + [ or ]	같은 종류의 프로그램 창들을 순환해가며 보기 (쌓는 방식)
+Alt (+ Shift) + `	같은 종류의 프로그램 창들을 순환해가며 보기 (쌓는 방식)
+Ctrl + Alt + Win + 방향키 	방향키로 윈도우창 선택하기 (아직 불안정) 
+	
+[날짜와 시간 입력 모드]
+CapsLock + O 	날짜와 시간 입력 모드로 입장 (초기 포맷은 YYMMDD임)
+[[아래 키들을 눌러 포맷을 바꾼다]]
+O 	YYYY와 YY 사이에서 변경 (날짜 모드로 유지)
+P 	hhmmss와 hhmm 사이에서 변경 (시간 모드로 유지)
+0 	YY, MM, DD의 순서 변경 (아시아 순서(YY-MM-DD), 유럽 순서(DD-MM-YY), 미국 순서(MM-DD-YY))
+아무 기호 (예: - . / :)	숫자들 사이에 기호 삽입 (예: 85-10-09, 85/10/09, 18:01)
+Enter 	현재 날짜나 시간을 현재의 포맷대로 입력하기
+?	도움말 보이기
+Esc	취소
+[[예]]
+CapsLock + O 그리고 Enter 입력	YYMMDD 포맷으로 현재 날짜 입력 (예: 120426)
+CapsLock + O 그리고 O Enter 입력 	YYYYMMDD 포맷으로 현재 날짜 입력 (예: 19850530)
+CapsLock + O 그리고 - Enter 입력 	YY-MM-DD 포맷으로 현재 날짜 입력 (예: 85-05-30)
+CapsLock + O 그리고 O - Enter 입력 	YYYY-MM-DD 포맷으로 현재 날짜 입력 (예: 1985-05-30)
+CapsLock + O 그리고 O . Enter 입력 	YYYY.MM.DD 포맷으로 현재 날짜 입력 (예: 1985.05.30)
+CapsLock + O 그리고 O 0 . Enter 입력 	DD.MM.YYYY 포맷으로 현재 날짜 입력 (예: 30.05.1985)
+CapsLock + O 그리고 P Enter 입력 	hhmm 포맷으로 현재 시간 입력 (예: 1359)
+CapsLock + O 그리고 P P Enter 입력 	hhmmss 포맷으로 현재 시간 입력 (예: 135943)
+CapsLock + O 그리고 P P : Enter 입력 	hh:mm:ss 포맷으로 현재 시간 입력 (예: 13:59:43)
+	
+[마우스 제어 모드]
+CapsLock + M 	마우스 제어 모드로 입장
+[[작동법]]
+숫자 입력 후 방향키	해당 숫자의 픽셀만큼 마우스 커서를 해당 방향으로 움직임
+CapsLock + 방향키 	마우스 커서를 키보드로 움직임 (Alt, Shift 또는 Ctrl을 누르고 있으면 속도가 변함)
++ 	마우스 수직수평 움직임 모드 (스페이스바를 누르면 원래 위치로 움직임) (CapsLock + + + + 과 동일)
+R 	마우스 자 모드 (스페이스바를 눌러서 기준점 설정)
+W 	마우스 커서를 현재 창의 중앙으로 옮김 (CapsLock + R 과 동일)
+C 	현재 마우스 커서 위치의 좌표 표시 (CapsLock + + 과 동일)
+? 	도움말 보이기
+Esc 	취소
+	
+[마우스 클릭 및 휠 스크롤]
+CapsLock + Z 	클릭
+CapsLock + X 	휠클릭
+CapsLock + C 	우클릭
+CapsLock + W 	휠 스크롤 업
+CapsLock + S 	휠 스크롤 다운
+CapsLock + A 	휠 스크롤 왼쪽
+CapsLock + D 	휠 스크롤 오른쪽
+	
+[마우스 북마크 0 ~ 9]
+CapsLock + Ctrl + 1 	현재 마우스 포인터 위치를 북마크 1에 저장 
+CapsLock + 1 	북마크 1의 위치를 클릭
+CapsLock + Shift + 1 	마우스 커서를 북마크 1의 위치로 옮김 (클릭 없이)
+CapsLock + Alt + 1 	마우스 북마크 1을 삭제 
+CapsLock + Ctrl + Shift + 1 	마우스 북마크 1의 위치를 표시
+	
+[윈도우 북마크 F1 ~ F9]
+CapsLock + Ctrl + F1 	현재 창을 윈도우 북마크 F1에 저장
+CapsLock + F1 	윈도우 북마크 F1의 창을 활성화
+CapsLock + F2 	윈도우 북마크 F2의 창을 활성화
+CapsLock + F1 ~ F9 	윈도우 북마크 F1 ~ F9의 창을 활성화
+CapsLock + F10 	윈도우 북마크 F1 ~ F9의 목록을 표시
+	
+[마우스 좌표와 수평수직으로 움직이기]
+CapsLock + + 	현재 마우스 좌표 표시
+CapsLock + + + + 	마우스 수직수평 움직임 모드 (스페이스바를 누르면 원래 위치로 움직임)
+	
+[기타]
+CapsLock + R 	마우스 커서를 현재 창의 중앙으로 옮김
+CapsLock + E 	현재 창을 마우스 커서의 위치로 옮김
+	
+[프로그 컨트롤 메뉴]
+CapsLock + ?	프로그 컨트롤 도움말을 띄움
+CapsLock + F12 	프로그 컨트롤을 비활성화 또는 활성화 시킴
+	
+[고급자 기능]
+Win + Shift + F1	현재 마우스 커서 아래의 색깔을 현재 윈도우창 내에서 모두 투명으로 바꿈
+Win + Shift + F2	윈도우 창의 타이틀바와 테두리를 없앰 - 1
+Win + Shift + F3	윈도우 창의 타이틀바와 테두리를 없앰 - 2
