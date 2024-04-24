@@ -136,3 +136,4 @@ CapsLock + F12 	Disable and enable FrogControl
 Win + Shift + F1	Make all pixels of the pixel color under the mouse pointer invisible inside the current window 
 Win + Shift + F2	Remove the title bar and borders - 1
 Win + Shift + F3	Remove the title bar and borders - 2
+Win + Ctrl + L	Show a list of programs which you can see with Alt + Tab
