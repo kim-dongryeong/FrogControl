@@ -213,6 +213,7 @@ FLAG_HELP_LANG := 2
 Return
 
 RemoveToolTip:
+	; usage: https://www.autohotkey.com/docs/v1/lib/ToolTip.htm
 	SetTimer, RemoveToolTip, Off
 	ToolTip
 return
@@ -3117,12 +3118,15 @@ CapsLock & M::
 	FLAG_MOUSECONTROL := 1 	; Critical, on  or  thread, priority, 10000 can be used intead. But SetTimer doesn't work in this thread too.
 	is_capslock_initial := 1 - getkeystate("capslock", "T")
 
+	; block some other hotkeys
+	; to prevent the 2nd keys of this Mouse Mode from causing problems with other hotkeys
 	Hotkey, CapsLock & W, , Off ; Because of if (GetKeyState("W", "P")) statement.
 	;Hotkey, CapsLock & C, , Off
 	Hotkey, CapsLock & Up, , Off
 	Hotkey, CapsLock & Down, , Off
 	Hotkey, CapsLock & Left, , Off
 	Hotkey, CapsLock & Right, , Off
+
 	CoordMode, Mouse  ; Switch to screen/absolute coordinates.
 	CoordMode, ToolTip
 	MouseGetPos, mousex, mousey
@@ -3161,7 +3165,7 @@ CapsLock & M::
 		else if (ErrorLevel = "EndKey:?") {
 			CoordMode, Mouse  ; Switch to screen/absolute coordinates.
 			MouseGetPos, mousex, mousey
-			ToolTip, % "Mouse control mode help`n`n- Type any number in pixel followed by an arrow key : Move the mouse to the direction`n- While holding CapsLock, hold any Arrow key : Move the mouse pointer by the keyboard (holding with Alt, Shift or Ctrl will change the speed)`n- + : Enter the mouse constrained mode. (Press SpaceBar to move the mouse pointer back to the original position.)`n- R : Enter the mouse ruler mode. (Then press SpaceBar to set the reference point.)`n- W : move the mouse pointer to the center of a current window`n- C : Show the current coordinates`n- ? : Open the help`n- Esc : close the help and finish the Mouse control mode", , mousey + 60, 3
+			ToolTip, % "Mouse control mode help`n`n- Type any number in pixel followed by an arrow key : Move the mouse to the direction`n- While holding CapsLock, hold any Arrow key : Move the mouse pointer by the keyboard (holding with Alt, Shift or Ctrl will change the speed)`n- + (or =) : Enter the mouse constrained mode. (Press SpaceBar to move the mouse pointer back to the original position.)`n- R : Enter the mouse ruler mode. (Then press SpaceBar to set the reference point.)`n- W : move the mouse pointer to the center of a current window`n- C : Show the current coordinates`n- ? : Open the help`n- Esc : close the help and finish the Mouse control mode", , mousey + 60, 3
 			mouseControl_helpOn := 1
 			;ToolTip, % "Input any number to move mouse or press arrow keys to move it.`nEsc to quit the mouse control mode."
 		} 
@@ -3429,6 +3433,8 @@ CapsLock & M::
 	ToolTip, % "Mouse control mode finished"
 	fct_RemoveToolTip_time(1, true)
 	SetTimer, fct_RemoveToolTip_time, % 2000
+	
+	; block some other hotkeys
 	Hotkey, CapsLock & W, , On
 	;Hotkey, CapsLock & C, , On
 	Hotkey, CapsLock & Up, , On
