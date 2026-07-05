@@ -596,212 +596,16 @@ GetKeyState, is_up, Up, P
 	; The main loop to receive arrow key inputs
 	Loop, {
 		Sleep, 10 	; poll ~100x/s instead of busy-waiting (CPU)
-		if (is_right = "D" or is_left = "D" or is_down = "D" or is_up = "D") { 	; recompute window geometry only when an arrow is actually pressed
-		window_previous := window_current 	; window_previous is a previous window_current at a previous arrow key.
-		WinGetPos, window_previous_x, window_previous_y, window_previous_w, window_previous_h, % "ahk_id " AltTab_ID_List_woMinWin_%window_previous%
-		window_previous_cen_x := window_previous_x + window_previous_w/2
-		window_previous_cen_y := window_previous_y + window_previous_h/2
-
-		; ============================================= WORKING ON! =================
-		Loop, %AltTab_ID_List_woMinWin_0% { 
-			WinGetPos, temp_x, temp_y, temp_w, temp_h, % "ahk_id " AltTab_ID_List_woMinWin_%A_Index%
-			temp_cen_x := temp_x + temp_w/2
-			temp_cen_y := temp_y + temp_h/2
-
-			window_rel_coor_from_cur%A_Index%_x := temp_cen_x - window_previous_cen_x
-			window_rel_coor_from_cur%A_Index%_y := temp_cen_y - window_previous_cen_y
-			window_rel_coor_from_cur%A_Index%_d2 := window_rel_coor_from_cur%A_Index%_x**2 + window_rel_coor_from_cur%A_Index%_y**2
-		}
-		} 	; end arrow-pressed geometry recompute
-
-		if (is_right = "D") { 	; If we use GetKeyState(), then because it's distant between the start and the loop, meantime the first arrow key (which triggered the hotkey) state may be up when it arrives at the loop, which causes the first arrow stroke doesn't let it go to the next window!
-			window_current_ScanningNext_d2 := 0x7FFFFFFFFFFFFFFF 	; effectively infinity (the old huge decimal literal overflowed 64-bit range)
-			window_current_ScanningNext_ID := ""
-
-			WinSet, Transparent, % SETTING_CONSTANT_HALFTRANS, % "ahk_id " AltTab_ID_List_woMinWin_%window_current%
-			
-			Loop, %AltTab_ID_List_woMinWin_0% { 	; The main loop to find a next window
-				if (A_Index = window_previous)  	; skip itself
-					continue
-				pos_det_x := abs(window_rel_coor_from_cur%A_Index%_y)/window_rel_coor_from_cur%A_Index%_x
-				if (window_rel_coor_from_cur%A_Index%_d2 = 0) {
-					if (AltTab_ID_List_woMinWin_%window_previous% < AltTab_ID_List_woMinWin_%A_Index%) {
-						if ((AltTab_ID_List_woMinWin_%A_Index% < AltTab_ID_List_woMinWin_%window_current%) or (window_current_ScanningNext_ID = "")) { 	; AltTab_ID_List_woMinWin_%window_current% == window_current_ScanningNext_ID
-							window_current := A_Index
-							window_current_ScanningNext_d2 := window_rel_coor_from_cur%A_Index%_d2 	; so is 0.
-							window_current_ScanningNext_ID := AltTab_ID_List_woMinWin_%A_Index%
-						}
-					}
-				} else if ((0 <= pos_det_x) and (pos_det_x <= 1/2)) {
-					if (window_rel_coor_from_cur%A_Index%_d2 <= window_current_ScanningNext_d2) {
-						if (window_rel_coor_from_cur%A_Index%_d2 = window_current_ScanningNext_d2) { 	; at the first loop, it can't happen. So don't have to consider this: window_current_ScanningNext_ID := ""
-							if (AltTab_ID_List_woMinWin_%A_Index% < window_current_ScanningNext_ID) {
-								window_current := A_Index
-								window_current_ScanningNext_d2 := window_rel_coor_from_cur%A_Index%_d2
-								window_current_ScanningNext_ID := AltTab_ID_List_woMinWin_%A_Index%
-							}
-						} else {
-							window_current := A_Index
-							window_current_ScanningNext_d2 := window_rel_coor_from_cur%A_Index%_d2
-							window_current_ScanningNext_ID := AltTab_ID_List_woMinWin_%A_Index%
-
-						}
-					}
-				} 
-			}
-		
-			WinSet, Transparent, % SETTING_CONSTANT_FOCUSTRANS, % "ahk_id " AltTab_ID_List_woMinWin_%window_current%
-			PulseTop(AltTab_ID_List_woMinWin_%window_current%)
-			
-			; ToolTip to check the current focused window
-			WinGetTitle, wintitle, % "ahk_id " AltTab_ID_List_woMinWin_%window_current%
-			tooltip % wintitle
-			SetTimer, RemoveToolTip, % SETTING_CONSTANT_TOOLTIPDUR_S 
-			
-			KeyWait, Right, T0.2	;wait for release of cycleKey, timeout after .. seconds
-		}
-
-		if (is_left = "D") { 	; If we use GetKeyState(), then because it's distant between the start and the loop, meantime the first arrow key (which triggered the hotkey) state may be up when it arrives at the loop, which causes the first arrow stroke doesn't let it go to the next window!
-			window_current_ScanningNext_d2 := 0x7FFFFFFFFFFFFFFF 	; effectively infinity (the old huge decimal literal overflowed 64-bit range)
-			window_current_ScanningNext_ID := ""
-
-			WinSet, Transparent, % SETTING_CONSTANT_HALFTRANS, % "ahk_id " AltTab_ID_List_woMinWin_%window_current%
-			
-			Loop, %AltTab_ID_List_woMinWin_0% { 	; The main loop to find a next window
-				if (A_Index = window_previous)  	; skip itself
-					continue
-				pos_det_x := abs(window_rel_coor_from_cur%A_Index%_y)/window_rel_coor_from_cur%A_Index%_x
-				if (window_rel_coor_from_cur%A_Index%_d2 = 0) {
-					if (AltTab_ID_List_woMinWin_%window_previous% < AltTab_ID_List_woMinWin_%A_Index%) {
-						if ((AltTab_ID_List_woMinWin_%A_Index% < AltTab_ID_List_woMinWin_%window_current%) or (window_current_ScanningNext_ID = "")) { 	; AltTab_ID_List_woMinWin_%window_current% == window_current_ScanningNext_ID
-							window_current := A_Index
-							window_current_ScanningNext_d2 := window_rel_coor_from_cur%A_Index%_d2 	; so is 0.
-							window_current_ScanningNext_ID := AltTab_ID_List_woMinWin_%A_Index%
-						}
-					}
-				} else if ((0 >= pos_det_x) and (pos_det_x >= -1/2)) {
-					if (window_rel_coor_from_cur%A_Index%_d2 <= window_current_ScanningNext_d2) {
-						if (window_rel_coor_from_cur%A_Index%_d2 = window_current_ScanningNext_d2) { 	; at the first loop, it can't happen. So don't have to consider this: window_current_ScanningNext_ID := ""
-							if (AltTab_ID_List_woMinWin_%A_Index% < window_current_ScanningNext_ID) {
-								window_current := A_Index
-								window_current_ScanningNext_d2 := window_rel_coor_from_cur%A_Index%_d2
-								window_current_ScanningNext_ID := AltTab_ID_List_woMinWin_%A_Index%
-							}
-						} else {
-							window_current := A_Index
-							window_current_ScanningNext_d2 := window_rel_coor_from_cur%A_Index%_d2
-							window_current_ScanningNext_ID := AltTab_ID_List_woMinWin_%A_Index%
-
-						}
-					}
-				} 
-			}
-
-			WinSet, Transparent, % SETTING_CONSTANT_FOCUSTRANS, % "ahk_id " AltTab_ID_List_woMinWin_%window_current%
-			PulseTop(AltTab_ID_List_woMinWin_%window_current%)
-
-			; ToolTip to check the current focused window
-			WinGetTitle, wintitle, % "ahk_id " AltTab_ID_List_woMinWin_%window_current%
-			tooltip % wintitle
-			SetTimer, RemoveToolTip, % SETTING_CONSTANT_TOOLTIPDUR_S 
-
-			KeyWait, Left, T0.2	;wait for release of cycleKey, timeout after 400ms
-		}
-
-		if (is_down = "D") { 	; If we use GetKeyState(), then because it's distant between the start and the loop, meantime the first arrow key (which triggered the hotkey) state may be up when it arrives at the loop, which causes the first arrow stroke doesn't let it go to the next window!
-			window_current_ScanningNext_d2 := 0x7FFFFFFFFFFFFFFF 	; effectively infinity (the old huge decimal literal overflowed 64-bit range)
-			window_current_ScanningNext_ID := ""
-
-			WinSet, Transparent, % SETTING_CONSTANT_HALFTRANS, % "ahk_id " AltTab_ID_List_woMinWin_%window_current%
-			
-			Loop, %AltTab_ID_List_woMinWin_0% { 	; The main loop to find a next window
-				if (A_Index = window_previous)  	; skip itself
-					continue
-				pos_det_y := (window_rel_coor_from_cur%A_Index%_x = 0) ? ((window_rel_coor_from_cur%A_Index%_y > 0) ? 999999 : -999999) : window_rel_coor_from_cur%A_Index%_y/abs(window_rel_coor_from_cur%A_Index%_x) 	; guard the x=0 case: division by zero yields blank in v1, which silently skipped windows directly above/below
-				if (window_rel_coor_from_cur%A_Index%_d2 = 0) {
-					if (AltTab_ID_List_woMinWin_%window_previous% < AltTab_ID_List_woMinWin_%A_Index%) {
-						if ((AltTab_ID_List_woMinWin_%A_Index% < AltTab_ID_List_woMinWin_%window_current%) or (window_current_ScanningNext_ID = "")) { 	; AltTab_ID_List_woMinWin_%window_current% == window_current_ScanningNext_ID
-							window_current := A_Index
-							window_current_ScanningNext_d2 := window_rel_coor_from_cur%A_Index%_d2 	; so is 0.
-							window_current_ScanningNext_ID := AltTab_ID_List_woMinWin_%A_Index%
-						}
-					}
-				} else if (pos_det_y >= 1/2) {
-					if (window_rel_coor_from_cur%A_Index%_d2 <= window_current_ScanningNext_d2) {
-						if (window_rel_coor_from_cur%A_Index%_d2 = window_current_ScanningNext_d2) { 	; at the first loop, it can't happen. So don't have to consider this: window_current_ScanningNext_ID := ""
-							if (AltTab_ID_List_woMinWin_%A_Index% < window_current_ScanningNext_ID) {
-								window_current := A_Index
-								window_current_ScanningNext_d2 := window_rel_coor_from_cur%A_Index%_d2
-								window_current_ScanningNext_ID := AltTab_ID_List_woMinWin_%A_Index%
-							}
-						} else {
-							window_current := A_Index
-							window_current_ScanningNext_d2 := window_rel_coor_from_cur%A_Index%_d2
-							window_current_ScanningNext_ID := AltTab_ID_List_woMinWin_%A_Index%
-
-						}
-					}
-				} 
-			}
-
-			WinSet, Transparent, % SETTING_CONSTANT_FOCUSTRANS, % "ahk_id " AltTab_ID_List_woMinWin_%window_current%
-			PulseTop(AltTab_ID_List_woMinWin_%window_current%)
-
-			; ToolTip to check the current focused window
-			WinGetTitle, wintitle, % "ahk_id " AltTab_ID_List_woMinWin_%window_current%
-			tooltip % wintitle
-			SetTimer, RemoveToolTip, % SETTING_CONSTANT_TOOLTIPDUR_S 
-			
-			KeyWait, Down, T0.2	;wait for release of cycleKey, timeout after 400ms
-		}
-
-
-		if (is_up = "D") { 	; If we use GetKeyState(), then because it's distant between the start and the loop, meantime the first arrow key (which triggered the hotkey) state may be up when it arrives at the loop, which causes the first arrow stroke doesn't let it go to the next window!
-			window_current_ScanningNext_d2 := 0x7FFFFFFFFFFFFFFF 	; effectively infinity (the old huge decimal literal overflowed 64-bit range)
-			window_current_ScanningNext_ID := ""
-
-			WinSet, Transparent, % SETTING_CONSTANT_HALFTRANS, % "ahk_id " AltTab_ID_List_woMinWin_%window_current%
-			
-			Loop, %AltTab_ID_List_woMinWin_0% { 	; The main loop to find a next window
-				if (A_Index = window_previous)  	; skip itself
-					continue
-				pos_det_y := (window_rel_coor_from_cur%A_Index%_x = 0) ? ((window_rel_coor_from_cur%A_Index%_y > 0) ? 999999 : -999999) : window_rel_coor_from_cur%A_Index%_y/abs(window_rel_coor_from_cur%A_Index%_x) 	; guard the x=0 case: division by zero yields blank in v1, which silently skipped windows directly above/below
-				if (window_rel_coor_from_cur%A_Index%_d2 = 0) {
-					if (AltTab_ID_List_woMinWin_%window_previous% < AltTab_ID_List_woMinWin_%A_Index%) {
-						if ((AltTab_ID_List_woMinWin_%A_Index% < AltTab_ID_List_woMinWin_%window_current%) or (window_current_ScanningNext_ID = "")) { 	; AltTab_ID_List_woMinWin_%window_current% == window_current_ScanningNext_ID
-							window_current := A_Index
-							window_current_ScanningNext_d2 := window_rel_coor_from_cur%A_Index%_d2 	; so is 0.
-							window_current_ScanningNext_ID := AltTab_ID_List_woMinWin_%A_Index%
-						}
-					}
-				} else if (pos_det_y <= -1/2) {
-					if (window_rel_coor_from_cur%A_Index%_d2 <= window_current_ScanningNext_d2) {
-						if (window_rel_coor_from_cur%A_Index%_d2 = window_current_ScanningNext_d2) { 	; at the first loop, it can't happen. So don't have to consider this: window_current_ScanningNext_ID := ""
-							if (AltTab_ID_List_woMinWin_%A_Index% < window_current_ScanningNext_ID) {
-								window_current := A_Index
-								window_current_ScanningNext_d2 := window_rel_coor_from_cur%A_Index%_d2
-								window_current_ScanningNext_ID := AltTab_ID_List_woMinWin_%A_Index%
-							}
-						} else {
-							window_current := A_Index
-							window_current_ScanningNext_d2 := window_rel_coor_from_cur%A_Index%_d2
-							window_current_ScanningNext_ID := AltTab_ID_List_woMinWin_%A_Index%
-
-						}
-					}
-				} 
-			}
-
-			WinSet, Transparent, % SETTING_CONSTANT_FOCUSTRANS, % "ahk_id " AltTab_ID_List_woMinWin_%window_current%
-			PulseTop(AltTab_ID_List_woMinWin_%window_current%)
-
-			; ToolTip to check the current focused window
-			WinGetTitle, wintitle, % "ahk_id " AltTab_ID_List_woMinWin_%window_current%
-			tooltip % wintitle
-			SetTimer, RemoveToolTip, % SETTING_CONSTANT_TOOLTIPDUR_S 
-
-			KeyWait, Up, T0.2	;wait for release of cycleKey, timeout after 400ms
-		}
+		; One shared step per direction (the four ~46-line copy-pasted blocks were unified 2026-07-05;
+		; direction selection now uses dot/cross scoring, see SeekArrow_FindNext)
+		if (is_right = "D")
+			SeekArrow_Step(1, 0, "Right")
+		if (is_left = "D")
+			SeekArrow_Step(-1, 0, "Left")
+		if (is_down = "D")
+			SeekArrow_Step(0, 1, "Down")
+		if (is_up = "D")
+			SeekArrow_Step(0, -1, "Up")
 
 		if (!((GetKeyState("LWin", "P") or GetKeyState("RWin", "P")) and GetKeyState("control", "P") and GetKeyState("Alt", "P"))) {
 			WinActivate, % "ahk_id " AltTab_ID_List_woMinWin_%window_current%
@@ -4318,4 +4122,54 @@ PulseTop(vID) {
 	; NOTE: as with the original inline pairs, a window that was ALREADY topmost loses that state.
 	WinSet, AlwaysOnTop, On, % "ahk_id " vID
 	WinSet, AlwaysOnTop, Off, % "ahk_id " vID
+}
+
+SeekArrow_Step(dirX, dirY, keyName) {
+	; One navigation step of the Win+Ctrl+Alt+Arrow window seeker: dim the current window,
+	; pick the best window in the given direction, highlight and raise it.
+	global
+	WinSet, Transparent, % SETTING_CONSTANT_HALFTRANS, % "ahk_id " AltTab_ID_List_woMinWin_%window_current%
+	sa_next := SeekArrow_FindNext(dirX, dirY)
+	if (sa_next)
+		window_current := sa_next
+	WinSet, Transparent, % SETTING_CONSTANT_FOCUSTRANS, % "ahk_id " AltTab_ID_List_woMinWin_%window_current%
+	PulseTop(AltTab_ID_List_woMinWin_%window_current%)
+	WinGetTitle, sa_title, % "ahk_id " AltTab_ID_List_woMinWin_%window_current%
+	tooltip % sa_title
+	SetTimer, RemoveToolTip, % SETTING_CONSTANT_TOOLTIPDUR_S
+	KeyWait, %keyName%, T0.2 	; wait for release of the arrow key, timeout for auto-repeat stepping
+}
+
+SeekArrow_FindNext(dirX, dirY) {
+	; Returns the index (into AltTab_ID_List_woMinWin_*) of the best window in direction
+	; (dirX,dirY) from the current one, or 0 if none. Scoring: projection along the
+	; direction (must be positive) plus twice the lateral offset - the nearest window
+	; that lies most directly in the pressed direction wins. Exactly-stacked windows
+	; (same center) are reachable as a last resort, cycling in list order.
+	global
+	WinGetPos, sa_cx, sa_cy, sa_cw, sa_ch, % "ahk_id " AltTab_ID_List_woMinWin_%window_current%
+	sa_cenx := sa_cx + sa_cw/2
+	sa_ceny := sa_cy + sa_ch/2
+	sa_best := 0
+	sa_bestScore := ""
+	Loop, %AltTab_ID_List_woMinWin_0% {
+		if (A_Index = window_current)
+			continue
+		WinGetPos, sa_x, sa_y, sa_w, sa_h, % "ahk_id " AltTab_ID_List_woMinWin_%A_Index%
+		sa_dx := sa_x + sa_w/2 - sa_cenx
+		sa_dy := sa_y + sa_h/2 - sa_ceny
+		if (sa_dx = 0 and sa_dy = 0) {
+			sa_score := 999999999 + A_Index 	; same center: last-resort candidate
+		} else {
+			sa_proj := sa_dx*dirX + sa_dy*dirY
+			if (sa_proj <= 0)
+				continue
+			sa_score := sa_proj + Abs(sa_dx*dirY - sa_dy*dirX)*2
+		}
+		if (sa_best = 0 or sa_score < sa_bestScore) {
+			sa_best := A_Index
+			sa_bestScore := sa_score
+		}
+	}
+	Return sa_best
 }
