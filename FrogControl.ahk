@@ -324,57 +324,12 @@ Return
 
 !^WheelDown::
 !^[::
-	if (window_rotate_firstcheck_popup) 	; a Win+Alt+Ctrl popup rotation is still live; don't touch its shared state
-		return
-	if (!window_rotate_firstcheck) { ;; if it's first time or it is 0
-		window_rotate_firstcheck := 1
-		wheel_count_down := 1
-		wheel_count_check := 0
-		AltTab_window_list()
-		Loop, %AltTab_ID_List_0% {
-			; Basically WinSet, Bottom revokes the WS_EX_TOPMOST (always on top) state.
-			WinGet, var_ExStyle, ExStyle, % "ahk_id " AltTab_ID_List_%A_index%
-			Winset, AlwaysOnTop, Off, % "ahk_id " AltTab_ID_List_%A_Index% 	; When WheelUp, topmost windows should be covered
-			if !(var_ExStyle & 0x8) {  ; 0x8 is WS_EX_TOPMOST (always on top).
-				AltTab_ID_List_topOfNontopmost := A_Index
-				break
-			}
-		}
-		window_rotate_current := 1
-		; If you want to skip topmost windows when rotating:
-		;window_rotate_current := AltTab_ID_List_topOfNontopmost
-		SetTimer, window_rotate_stacking, 1
-		return
-	}
-	wheel_count_down ++
+	WindowRotate_OnWheel(false, true)
 return
 
 !^WheelUp::
 !^]::
-	if (window_rotate_firstcheck_popup) 	; a Win+Alt+Ctrl popup rotation is still live; don't touch its shared state
-		return
-	if (!window_rotate_firstcheck) {
-		window_rotate_firstcheck := 1
-		wheel_count_down := -1
-		wheel_count_check := 0
-		AltTab_window_list()
-		Loop, %AltTab_ID_List_0% {
-			; Basically WinSet, Bottom revokes the WS_EX_TOPMOST (always on top) state.
-			WinGet, var_ExStyle, ExStyle, % "ahk_id " AltTab_ID_List_%A_index%
-			Winset, AlwaysOnTop, Off, % "ahk_id " AltTab_ID_List_%A_Index% 	; When WheelUp, topmost windows should be covered
-			if !(var_ExStyle & 0x8) {  ; 0x8 is WS_EX_TOPMOST (always on top).
-				AltTab_ID_List_topOfNontopmost := A_Index
-				break
-			}
-		}
-		window_rotate_current := 1
-		; If you want to skip topmost windows when rotating:
-		;window_rotate_current := AltTab_ID_List_topOfNontopmost
-
-		SetTimer, window_rotate_stacking, 1
-		return
-	}
-	wheel_count_down --
+	WindowRotate_OnWheel(false, false)
 return
 
 window_rotate_stacking:
@@ -429,8 +384,7 @@ window_rotate_stacking:
 			if (window_rotate_current < 1) {
 				window_rotate_current := AltTab_ID_List_0
 			}
-			Winset, AlwaysOnTop, On, % "ahk_id " AltTab_ID_List_%window_rotate_current%
-			Winset, AlwaysOnTop, Off, % "ahk_id " AltTab_ID_List_%window_rotate_current%
+			PulseTop(AltTab_ID_List_%window_rotate_current%)
 
 			; ToolTip to check the current focused window
 			WinGetTitle, wintitle, % "ahk_id " AltTab_ID_List_%window_rotate_current%
@@ -448,51 +402,12 @@ return
 ; ================= Temporary showing around ==================== starts ============================
 #!^WheelDown::
 #!^[::
-	if (window_rotate_firstcheck) 	; an Alt+Ctrl stacking rotation is still live; don't touch its shared state
-		return
-	if (!window_rotate_firstcheck_popup) { ;; if it's first time or it is 0
-		window_rotate_firstcheck_popup := 1
-		wheel_count_down := 1
-		wheel_count_check := 0
-		AltTab_window_list()
-		Loop, %AltTab_ID_List_0% {
-			; Basically WinSet, Bottom revokes the WS_EX_TOPMOST (always on top) state.
-			WinGet, var_ExStyle, ExStyle, % "ahk_id " AltTab_ID_List_%A_index%
-			if !(var_ExStyle & 0x8) {  ; 0x8 is WS_EX_TOPMOST (always on top).
-				AltTab_ID_List_topOfNontopmost := A_Index
-				break
-			}
-		}
-		window_rotate_current := AltTab_ID_List_topOfNontopmost
-		SetTimer, window_rotate_popup, 1
-		return
-	}
-	wheel_count_down ++
+	WindowRotate_OnWheel(true, true)
 return
 
 #!^WheelUp::
 #!^]::
-	if (window_rotate_firstcheck) 	; an Alt+Ctrl stacking rotation is still live; don't touch its shared state
-		return
-	if (!window_rotate_firstcheck_popup) {
-		window_rotate_firstcheck_popup := 1
-		wheel_count_down := -1
-		wheel_count_check := 0
-		AltTab_window_list()
-		Loop, %AltTab_ID_List_0% {
-			; Basically WinSet, Bottom revokes the WS_EX_TOPMOST (always on top) state.
-			WinGet, var_ExStyle, ExStyle, % "ahk_id " AltTab_ID_List_%A_index%
-			if !(var_ExStyle & 0x8) {  ; 0x8 is WS_EX_TOPMOST (always on top).
-				AltTab_ID_List_topOfNontopmost := A_Index
-				break
-			}
-		}
-		window_rotate_current := 1
-
-		SetTimer, window_rotate_popup, 1
-		return
-	}
-	wheel_count_down --
+	WindowRotate_OnWheel(true, false)
 return
 
 window_rotate_popup:
@@ -556,8 +471,7 @@ window_rotate_popup:
 				window_rotate_current := 1
 			}
 
-			Winset, AlwaysOnTop, On, % "ahk_id " AltTab_ID_List_%window_rotate_current%
-			Winset, AlwaysOnTop, Off, % "ahk_id " AltTab_ID_List_%window_rotate_current%
+			PulseTop(AltTab_ID_List_%window_rotate_current%)
 			WinSet, Transparent, % SETTING_CONSTANT_FOCUSTRANS, % "ahk_id " AltTab_ID_List_%window_rotate_current%
 			; ToolTip to check the current focused window
 			WinGetTitle, wintitle, % "ahk_id " AltTab_ID_List_%window_rotate_current%
@@ -573,8 +487,7 @@ window_rotate_popup:
 			if (window_rotate_current < 1) {
 				window_rotate_current := AltTab_ID_List_0
 			}
-			Winset, AlwaysOnTop, On, % "ahk_id " AltTab_ID_List_%window_rotate_current%
-			Winset, AlwaysOnTop, Off, % "ahk_id " AltTab_ID_List_%window_rotate_current%
+			PulseTop(AltTab_ID_List_%window_rotate_current%)
 			WinSet, Transparent, % SETTING_CONSTANT_FOCUSTRANS, % "ahk_id " AltTab_ID_List_%window_rotate_current%
 			; ToolTip to check the current focused window
 			WinGetTitle, wintitle, % "ahk_id " AltTab_ID_List_%window_rotate_current%
@@ -738,8 +651,7 @@ GetKeyState, is_up, Up, P
 			}
 		
 			WinSet, Transparent, % SETTING_CONSTANT_FOCUSTRANS, % "ahk_id " AltTab_ID_List_woMinWin_%window_current%
-			Winset, AlwaysOnTop, On, % "ahk_id " AltTab_ID_List_woMinWin_%window_current%
-			Winset, AlwaysOnTop, Off, % "ahk_id " AltTab_ID_List_woMinWin_%window_current%
+			PulseTop(AltTab_ID_List_woMinWin_%window_current%)
 			
 			; ToolTip to check the current focused window
 			WinGetTitle, wintitle, % "ahk_id " AltTab_ID_List_woMinWin_%window_current%
@@ -786,8 +698,7 @@ GetKeyState, is_up, Up, P
 			}
 
 			WinSet, Transparent, % SETTING_CONSTANT_FOCUSTRANS, % "ahk_id " AltTab_ID_List_woMinWin_%window_current%
-			Winset, AlwaysOnTop, On, % "ahk_id " AltTab_ID_List_woMinWin_%window_current%
-			Winset, AlwaysOnTop, Off, % "ahk_id " AltTab_ID_List_woMinWin_%window_current%
+			PulseTop(AltTab_ID_List_woMinWin_%window_current%)
 
 			; ToolTip to check the current focused window
 			WinGetTitle, wintitle, % "ahk_id " AltTab_ID_List_woMinWin_%window_current%
@@ -834,8 +745,7 @@ GetKeyState, is_up, Up, P
 			}
 
 			WinSet, Transparent, % SETTING_CONSTANT_FOCUSTRANS, % "ahk_id " AltTab_ID_List_woMinWin_%window_current%
-			Winset, AlwaysOnTop, On, % "ahk_id " AltTab_ID_List_woMinWin_%window_current%
-			Winset, AlwaysOnTop, Off, % "ahk_id " AltTab_ID_List_woMinWin_%window_current%
+			PulseTop(AltTab_ID_List_woMinWin_%window_current%)
 
 			; ToolTip to check the current focused window
 			WinGetTitle, wintitle, % "ahk_id " AltTab_ID_List_woMinWin_%window_current%
@@ -883,8 +793,7 @@ GetKeyState, is_up, Up, P
 			}
 
 			WinSet, Transparent, % SETTING_CONSTANT_FOCUSTRANS, % "ahk_id " AltTab_ID_List_woMinWin_%window_current%
-			Winset, AlwaysOnTop, On, % "ahk_id " AltTab_ID_List_woMinWin_%window_current%
-			Winset, AlwaysOnTop, Off, % "ahk_id " AltTab_ID_List_woMinWin_%window_current%
+			PulseTop(AltTab_ID_List_woMinWin_%window_current%)
 
 			; ToolTip to check the current focused window
 			WinGetTitle, wintitle, % "ahk_id " AltTab_ID_List_woMinWin_%window_current%
@@ -1953,8 +1862,15 @@ CapsLock & o::
 	CoordMode, ToolTip
 	CoordMode, Caret
 	CollectMonitorInfo()
+	caret_x := A_CaretX
+	caret_y := A_CaretY
+	if (caret_x = "" or caret_y = "") { 	; some apps (Electron, elevated windows, terminals) expose no caret: fall back to the mouse position
+		CoordMode, Mouse
+		MouseGetPos, caret_x, caret_y
+	}
+	monitor_current := monitor_no_prm 	; fallback: primary monitor, in case the caret is on no monitor
 	loop, %monitor_no% {
-		if (monitor_%A_Index%_left <= A_CaretX) and (A_CaretX <= monitor_%A_Index%_right - 1) and (monitor_%A_Index%_top <= A_CaretY) and (A_CaretY <= monitor_%A_Index%_bottom - 1) {		; monitors' lefts and rights are like 0 ~ 2560, -1920 ~ 0.
+		if (monitor_%A_Index%_left <= caret_x) and (caret_x <= monitor_%A_Index%_right - 1) and (monitor_%A_Index%_top <= caret_y) and (caret_y <= monitor_%A_Index%_bottom - 1) {		; monitors' lefts and rights are like 0 ~ 2560, -1920 ~ 0.
 			monitor_current := A_Index
 		}
 	}
@@ -3447,14 +3363,8 @@ Show_Windows(vProcessName, vID, girdMode) {
 		monitor_%A_Index%_workarea_ratio := monitor_%A_Index%_workarea_height/monitor_%A_Index%_workarea_width
 		monitor_%A_Index%_workarea_center_x := (monitor_%A_Index%_workarea_right + monitor_%A_Index%_workarea_left)/2
 		monitor_%A_Index%_workarea_center_y := (monitor_%A_Index%_workarea_bottom + monitor_%A_Index%_workarea_top)/2
-		monitor_%A_Index%_grid_no_x := monitor_%A_Index%_workarea_width // 800 		; the numbers of grid along with x axis. 1920/2 = 960, 2560/3 = 853, 1920/800 = 2.xx, 2560/800 = 3.xx, 3840/800 = 4.8
-		monitor_%A_Index%_grid_no_y := monitor_%A_Index%_workarea_height // 450 	; the numbers of grid along with y axis. 1080/2 = 540, 1440/3 = 480, 1080/450 = 2.xx, 1440/450 = 3.xx, 2160/450 = 4.8
-		monitor_%A_Index%_grid_no_x := monitor_%A_Index%_grid_no_x < 1 ? 1 : monitor_%A_Index%_grid_no_x 	; guard: work area narrower than 800 px would otherwise divide by zero below
-		monitor_%A_Index%_grid_no_y := monitor_%A_Index%_grid_no_y < 1 ? 1 : monitor_%A_Index%_grid_no_y 	; guard: work area shorter than 450 px would otherwise divide by zero below
-		monitor_%A_Index%_grid_no_xy := monitor_%A_Index%_grid_no_x * monitor_%A_Index%_grid_no_y 			; the numbers of grids
-		monitor_%A_Index%_grid_width := monitor_%A_Index%_workarea_width / monitor_%A_Index%_grid_no_x 		; width of a grid
-		monitor_%A_Index%_grid_height := monitor_%A_Index%_workarea_height / monitor_%A_Index%_grid_no_y 	; height of a grid
 	}
+	; (grid dimensions are computed in the girdMode=1 branch below, from the window count and the screen aspect ratio)
 
 
 	if (StrLen(vProcessName) > 0) {
@@ -3538,26 +3448,17 @@ Show_Windows(vProcessName, vID, girdMode) {
 				}
 			}
 		}
-		if (AltTabListSameType.length() > monitor_%monitor_no_prm%_grid_no_xy) {
-			; to create more grid
-			Loop, {
-				Loop, {
-					monitor_%monitor_no_prm%_grid_no_x ++
-					monitor_%monitor_no_prm%_grid_no_xy := monitor_%monitor_no_prm%_grid_no_x * monitor_%monitor_no_prm%_grid_no_y
-					monitor_%monitor_no_prm%_grid_width := monitor_%monitor_no_prm%_workarea_width / monitor_%monitor_no_prm%_grid_no_x
-					break
-				}
-				if (AltTabListSameType.length() <= monitor_%monitor_no_prm%_grid_no_xy) {
-					break
-				}
-				monitor_%monitor_no_prm%_grid_no_y ++
-				monitor_%monitor_no_prm%_grid_no_xy := monitor_%monitor_no_prm%_grid_no_x * monitor_%monitor_no_prm%_grid_no_y
-				monitor_%monitor_no_prm%_grid_height := monitor_%monitor_no_prm%_workarea_height / monitor_%monitor_no_prm%_grid_no_y
-				if (AltTabListSameType.length() <= monitor_%monitor_no_prm%_grid_no_xy) {
-					break
-				}
-			}
-		}
+		; grid derived from the window count and the screen aspect ratio
+		; (replaces the old fixed 800x450-per-cell heuristic and its grid-growing loop)
+		SameTypeWinCount := AltTabListSameType.length()
+		monitor_%monitor_no_prm%_grid_no_x := Ceil(Sqrt(SameTypeWinCount * monitor_%monitor_no_prm%_workarea_width / monitor_%monitor_no_prm%_workarea_height))
+		if (monitor_%monitor_no_prm%_grid_no_x < 1)
+			monitor_%monitor_no_prm%_grid_no_x := 1
+		monitor_%monitor_no_prm%_grid_no_y := Ceil(SameTypeWinCount / monitor_%monitor_no_prm%_grid_no_x)
+		if (monitor_%monitor_no_prm%_grid_no_y < 1)
+			monitor_%monitor_no_prm%_grid_no_y := 1
+		monitor_%monitor_no_prm%_grid_width := monitor_%monitor_no_prm%_workarea_width / monitor_%monitor_no_prm%_grid_no_x
+		monitor_%monitor_no_prm%_grid_height := monitor_%monitor_no_prm%_workarea_height / monitor_%monitor_no_prm%_grid_no_y
 		counter := 0
 		isLoopDone := 0
 		counterRvs := AltTabListSameType.length()
@@ -3576,8 +3477,7 @@ Show_Windows(vProcessName, vID, girdMode) {
 				}
 				stillEmptyLoop := 0
 				DWM_WinMove("ahk_id " AltTabListSameType[counterRvs].ID, monitor_%monitor_no_prm%_workarea_left + monitor_%monitor_no_prm%_grid_width * (loop_1_indexRev - 1), monitor_%monitor_no_prm%_workarea_top + monitor_%monitor_no_prm%_grid_height * (loop_2_indexRev - 1), monitor_%monitor_no_prm%_grid_width, monitor_%monitor_no_prm%_grid_height)
-				WinSet, AlwaysOnTop, On, % "ahk_id " AltTabListSameType[counterRvs].ID
-				WinSet, AlwaysOnTop, Off, % "ahk_id " AltTabListSameType[counterRvs].ID
+				PulseTop(AltTabListSameType[counterRvs].ID)
 				counterRvs --
 			}
 		} 
@@ -3635,11 +3535,10 @@ Show_Windows(vProcessName, vID, girdMode) {
 			Loop, % AltTabListSameType.length() {
 				temp_index := AltTabListSameType.length() - A_Index + 1
 				WinMove, % "ahk_id " AltTabListSameType[temp_index].ID, , spreadFExp_left, spreadFExp_top
-				WinSet, AlwaysOnTop, On, % "ahk_id " AltTabListSameType[temp_index].ID
-				WinSet, AlwaysOnTop, Off, % "ahk_id " AltTabListSameType[temp_index].ID
-				WinActivate, % "ahk_id " AltTabListSameType[temp_index].ID
+				PulseTop(AltTabListSameType[temp_index].ID)
 				spreadFExp_left += AltTabListSameType[temp_index].width
 			}
+			WinActivate, % "ahk_id " AltTabListSameType[1].ID 	; activate once after the loop (was per-window inside the loop: focus churn and flicker)
 		} else if (AltTabListSameType.all_h <= monitor_%monitor_no_prm%_workarea_height) { 	; putting vertically all together
 			spreadFExp_left := monitor_%monitor_no_prm%_workarea_center_x - AltTabListSameType.max_w / 2
 			spreadFExp_top := monitor_%monitor_no_prm%_workarea_center_y - AltTabListSameType.all_h / 2
@@ -3647,12 +3546,11 @@ Show_Windows(vProcessName, vID, girdMode) {
 				temp_index := AltTabListSameType.length() - A_Index + 1
 				WinMove, % "ahk_id " AltTabListSameType[temp_index].ID, , spreadFExp_left, spreadFExp_top
 				;DllCall("MoveWindow", UInt, AltTabListSameType[temp_index].ID, UInt, spreadFExpEach_x, UInt, spreadFExpEach_y, UInt, AltTabListSameType[temp_index].width, UInt, AltTabListSameType[temp_index].height, Int, 1)
-				WinSet, AlwaysOnTop, On, % "ahk_id " AltTabListSameType[temp_index].ID
-				WinSet, AlwaysOnTop, Off, % "ahk_id " AltTabListSameType[temp_index].ID
-				WinActivate, % "ahk_id " AltTabListSameType[temp_index].ID
+				PulseTop(AltTabListSameType[temp_index].ID)
 				spreadFExp_top += AltTabListSameType[temp_index].height
 			}
-		} else if ((monitor_%monitor_no_prm%_grid_no_x <= 1) or (monitor_%monitor_no_prm%_grid_no_y <= 1)) {  	; in case the screen is so narrow
+			WinActivate, % "ahk_id " AltTabListSameType[1].ID 	; activate once after the loop (was per-window inside the loop: focus churn and flicker)
+		} else if ((monitor_%monitor_no_prm%_workarea_width // 800 <= 1) or (monitor_%monitor_no_prm%_workarea_height // 450 <= 1)) {  	; in case the screen is so narrow
 			; putting diagonally, overlapping
 			spreadFExp_left := monitor_%monitor_no_prm%_workarea_left
 			spreadFExp_top := monitor_%monitor_no_prm%_workarea_top
@@ -3666,8 +3564,7 @@ Show_Windows(vProcessName, vID, girdMode) {
 				spreadFExpEach_y := spreadFExp_top + spreadFExp_step_height * (A_Index - 1)
 				WinMove, % "ahk_id " AltTabListSameType[temp_index].ID, , spreadFExpEach_x, spreadFExpEach_y 	; When SetWinDelay, -1 is declared, WinMove is as fast as DllCall("MoveWindow".. .
 				;DllCall("MoveWindow", UInt, AltTabListSameType[temp_index].ID, UInt, spreadFExpEach_x, UInt, spreadFExpEach_y, UInt, AltTabListSameType[temp_index].width, UInt, AltTabListSameType[temp_index].height, Int, 1)
-				WinSet, AlwaysOnTop, On, % "ahk_id " AltTabListSameType[temp_index].ID
-				WinSet, AlwaysOnTop, Off, % "ahk_id " AltTabListSameType[temp_index].ID
+				PulseTop(AltTabListSameType[temp_index].ID)
 			}
 			WinActivate, % "ahk_id " AltTabListSameType[1].ID
 
@@ -3794,12 +3691,9 @@ Show_Windows(vProcessName, vID, girdMode) {
 				}
 				
 
-				WinSet, AlwaysOnTop, On, % "ahk_id " FExpStack_leftFExp
-				WinSet, AlwaysOnTop, Off, % "ahk_id " FExpStack_leftFExp
-				WinSet, AlwaysOnTop, On, % "ahk_id " FExpStack_rightFExp
-				WinSet, AlwaysOnTop, Off, % "ahk_id " FExpStack_rightFExp
-				WinSet, AlwaysOnTop, On, % "ahk_id " FExpStack_bottomFExp
-				WinSet, AlwaysOnTop, Off, % "ahk_id " FExpStack_bottomFExp
+				PulseTop(FExpStack_leftFExp)
+				PulseTop(FExpStack_rightFExp)
+				PulseTop(FExpStack_bottomFExp)
 				WinActivate, % "ahk_id " AltTabListSameType[1].ID
 
 ;;;;;===================================00000000000000000000000000000
@@ -3880,12 +3774,9 @@ Show_Windows(vProcessName, vID, girdMode) {
 				}
 				
 
-				WinSet, AlwaysOnTop, On, % "ahk_id " FExpStack_topFExp
-				WinSet, AlwaysOnTop, Off, % "ahk_id " FExpStack_topFExp
-				WinSet, AlwaysOnTop, On, % "ahk_id " FExpStack_bottomFExp
-				WinSet, AlwaysOnTop, Off, % "ahk_id " FExpStack_bottomFExp
-				WinSet, AlwaysOnTop, On, % "ahk_id " FExpStack_rightFExp
-				WinSet, AlwaysOnTop, Off, % "ahk_id " FExpStack_rightFExp
+				PulseTop(FExpStack_topFExp)
+				PulseTop(FExpStack_bottomFExp)
+				PulseTop(FExpStack_rightFExp)
 				WinActivate, % "ahk_id " AltTabListSameType[1].ID
 
 ;;;;;===================================00000000000000000000000000000
@@ -4147,12 +4038,9 @@ Show_Windows(vProcessName, vID, girdMode) {
 			WinMove, % "ahk_id " spreadFExp_4_2_1_ID, , spreadFExp_4_2_1_x, spreadFExp_4_2_1_y 
 			WinMove, % "ahk_id " spreadFExp_4_2_2_ID, , spreadFExp_4_2_2_x, spreadFExp_4_2_2_y 
 
-			WinSet, AlwaysOnTop, On, % "ahk_id " spreadFExp_4_1_2_ID
-			WinSet, AlwaysOnTop, Off, % "ahk_id " spreadFExp_4_1_2_ID
-			WinSet, AlwaysOnTop, On, % "ahk_id " spreadFExp_4_2_2_ID
-			WinSet, AlwaysOnTop, Off, % "ahk_id " spreadFExp_4_2_2_ID
-			WinSet, AlwaysOnTop, On, % "ahk_id " spreadFExp_4_1_1_ID
-			WinSet, AlwaysOnTop, Off, % "ahk_id " spreadFExp_4_1_1_ID
+			PulseTop(spreadFExp_4_1_2_ID)
+			PulseTop(spreadFExp_4_2_2_ID)
+			PulseTop(spreadFExp_4_1_1_ID)
 
 			; finding positions for the windows to put diagonally
 			; putting diagonally, overlapping
@@ -4167,12 +4055,10 @@ Show_Windows(vProcessName, vID, girdMode) {
 				spreadFExpEach_x := spreadFExp_left + spreadFExp_step_width * A_Index
 				spreadFExpEach_y := spreadFExp_top + spreadFExp_step_height * A_Index
 				WinMove, % "ahk_id " AltTabListSameType_sorted_area_desc[temp_index].ID, , spreadFExpEach_x, spreadFExpEach_y 
-				WinSet, AlwaysOnTop, On, % "ahk_id " AltTabListSameType_sorted_area_desc[temp_index].ID
-				WinSet, AlwaysOnTop, Off, % "ahk_id " AltTabListSameType_sorted_area_desc[temp_index].ID
+				PulseTop(AltTabListSameType_sorted_area_desc[temp_index].ID)
 			}
 
-				WinSet, AlwaysOnTop, On, % "ahk_id " spreadFExp_4_2_1_ID
-				WinSet, AlwaysOnTop, Off, % "ahk_id " spreadFExp_4_2_1_ID
+				PulseTop(spreadFExp_4_2_1_ID)
 
 				WinActivate, % "ahk_id " AltTabListSameType[1].ID
 
@@ -4190,8 +4076,7 @@ Show_Windows(vProcessName, vID, girdMode) {
 				spreadFExpEach_x := spreadFExp_left + spreadFExp_step_width * (A_Index - 1)
 				spreadFExpEach_y := spreadFExp_top + spreadFExp_step_height * (A_Index - 1)
 				WinMove, % "ahk_id " AltTabListSameType[temp_index].ID, , spreadFExpEach_x, spreadFExpEach_y 	; When SetWinDelay, -1 is declared, WinMove is as fast as DllCall("MoveWindow".. .
-				WinSet, AlwaysOnTop, On, % "ahk_id " AltTabListSameType[temp_index].ID
-				WinSet, AlwaysOnTop, Off, % "ahk_id " AltTabListSameType[temp_index].ID
+				PulseTop(AltTabListSameType[temp_index].ID)
 			}
 			WinActivate, % "ahk_id " AltTabListSameType[1].ID
 		}
@@ -4392,4 +4277,45 @@ DWM_WinMove(winTitle, x := "", y := "", w := "", h := "") {
 	nw := (w = "") ? "" : w + bL + bR
 	nh := (h = "") ? "" : h + bT + bB
 	WinMove, ahk_id %hwnd%, , %nx%, %ny%, %nw%, %nh%
+}
+
+WindowRotate_OnWheel(isPopup, dirDown) {
+	; Shared body of the four window-rotation hotkeys:
+	;   !^Wheel / !^[ ] = rotate while stacking,   #!^Wheel / #!^[ ] = rotate as popup (temporary showing around)
+	global
+	if (isPopup ? window_rotate_firstcheck : window_rotate_firstcheck_popup) 	; the other mode's loop is live; don't touch the shared counters
+		Return
+	if (!(isPopup ? window_rotate_firstcheck_popup : window_rotate_firstcheck)) { 	; first wheel notch: initialize and start the rotation loop
+		if (isPopup)
+			window_rotate_firstcheck_popup := 1
+		else
+			window_rotate_firstcheck := 1
+		wheel_count_down := dirDown ? 1 : -1
+		wheel_count_check := 0
+		AltTab_window_list()
+		Loop, %AltTab_ID_List_0% {
+			; Basically WinSet, Bottom revokes the WS_EX_TOPMOST (always on top) state.
+			WinGet, var_ExStyle, ExStyle, % "ahk_id " AltTab_ID_List_%A_Index%
+			if (!isPopup)
+				Winset, AlwaysOnTop, Off, % "ahk_id " AltTab_ID_List_%A_Index% 	; when rotating with stacking, topmost windows must be coverable
+			if !(var_ExStyle & 0x8) { 	; 0x8 is WS_EX_TOPMOST (always on top)
+				AltTab_ID_List_topOfNontopmost := A_Index
+				break
+			}
+		}
+		window_rotate_current := (isPopup and dirDown) ? AltTab_ID_List_topOfNontopmost : 1
+		if (isPopup)
+			SetTimer, window_rotate_popup, -1
+		else
+			SetTimer, window_rotate_stacking, -1
+		Return
+	}
+	wheel_count_down += dirDown ? 1 : -1
+}
+
+PulseTop(vID) {
+	; Raises a window by momentarily making it AlwaysOnTop, then releasing.
+	; NOTE: as with the original inline pairs, a window that was ALREADY topmost loses that state.
+	WinSet, AlwaysOnTop, On, % "ahk_id " vID
+	WinSet, AlwaysOnTop, Off, % "ahk_id " vID
 }
