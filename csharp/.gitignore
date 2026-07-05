@@ -1,0 +1,11 @@
+# Build output
+bin/
+obj/
+
+# User-specific runtime state (written next to the exe on first run)
+**/frogcontrol.settings.json
+
+# Rider / VS
+.vs/
+.idea/
+*.user

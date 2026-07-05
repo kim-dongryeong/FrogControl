@@ -4,6 +4,18 @@ history
 (older entries consolidated from the history.txt files kept alongside pre-git versions
  in "K:\My Drive\_MainDrive\software-portable\AutoHotKey\dk-my macro")
 
+C# (.NET) native port (2026-07-06)
+Added csharp/ - a faithful C# / .NET 8 (WinForms) rewrite of the whole script as a native
+Windows tray application. Uses global low-level keyboard/mouse hooks (WH_KEYBOARD_LL /
+WH_MOUSE_LL) so CapsLock-as-prefix and the tap-to-speed-up features work exactly like the AHK
+build, with no AutoHotkey runtime. Every hotkey in shortcut list-en.txt is implemented; the
+Show_Windows arrange engine, the two modal modes (Date/Time input, Mouse control), window/mouse
+bookmarks, rotation, seek, snap/grid move and resize are all ported. Behaviour forks are exposed
+as switches in frogcontrol.settings.json (MouseMoveBackend, ActivationBackend, SuppressCapsLock,
+CapsLockTapToggles, EnableUnstableRotation) so they can be tested without recompiling. Build/run
+with csharp/build.ps1; standalone .exe with csharp/publish.ps1. See csharp/README.md for details.
+The AutoHotkey build (FrogControl.ahk) is unchanged and remains authoritative.
+
 2.1.0 (2026-07-05)
 Deduplication milestone: the whole refactor backlog is done. FrogControl.ahk now holds only
 hotkeys and the auto-execute section (~2,600 lines); all functions live in lib/ modules

@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>FrogControl</AssemblyName>
+    <RootNamespace>FrogControl</RootNamespace>
+    <Version>2.1.0</Version>
+    <Authors>Kim Dongryeong</Authors>
+    <Product>FrogControl</Product>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- DPI: PerMonitorV2 so coordinates are physical pixels (also set via SetThreadDpiAwarenessContext). -->
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <!-- Single-file / self-contained publishing knobs (used by publish.ps1) -->
+    <SelfContained>false</SelfContained>
+    <RuntimeIdentifier Condition="'$(PublishSingleFile)' == 'true'">win-x64</RuntimeIdentifier>
+    <ApplicationIcon>..\..\frog face icon 3.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Ship the icon + help data next to the exe, like the AHK script expects them beside itself. -->
+    <None Include="..\..\frog face icon 3.ico" Link="frog face icon 3.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\..\shortcut list-en.txt" Link="shortcut list-en.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\..\shortcut list-ko.txt" Link="shortcut list-ko.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

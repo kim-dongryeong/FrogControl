@@ -1,0 +1,4 @@
+# Keep LF line endings for the whole C# tree (matches the repo's LF convention).
+* text=auto eol=lf
+*.ico binary
+*.png binary
