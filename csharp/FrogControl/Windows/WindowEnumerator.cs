@@ -120,6 +120,10 @@ public static class WindowEnumerator
         var toReturn = new List<WindowInfo>();
         var list = List();
 
+        // AHK's "=" comparison is case-insensitive; ProcessName from Process.ProcessName is lowercased
+        // (e.g. "explorer.exe") so a literal "Explorer.exe" must match case-insensitively.
+        var ci = StringComparison.OrdinalIgnoreCase;
+
         if (id != IntPtr.Zero)
         {
             string proc = "";
@@ -131,7 +135,7 @@ public static class WindowEnumerator
             for (int i = 0; i < list.Count; i++)
             {
                 var w = list[i];
-                if (w.ProcessName == proc && w.Class == cls)
+                if (string.Equals(w.ProcessName, proc, ci) && string.Equals(w.Class, cls, ci))
                 {
                     var clone = w.Clone();
                     clone.MomIndex = i + 1;
@@ -144,7 +148,7 @@ public static class WindowEnumerator
             for (int i = 0; i < list.Count; i++)
             {
                 var w = list[i];
-                if (w.ProcessName == processName)
+                if (string.Equals(w.ProcessName, processName, ci))
                 {
                     var clone = w.Clone();
                     clone.MomIndex = i + 1;
