@@ -38,6 +38,7 @@ Win + Alt + Shift + Arrow Keys 	Resize window to the screen edge
 [Operate window]
 Control + Shift + Right-click 	Close a tab (like Ctrl + W)
 Control + Shift + Alt + Right-click 	Close a window (like Alt + F4)
+Win + Control + Shift + Alt + Right-click 	Close the window under the mouse
 Alt + Right-click 	Minimize a window (like Win + ↓)
 Alt + Shift + Right-click 	Send a window to the bottom of stack (like Alt + Esc)
 Control + Shift + Wheel Scroll 	Move to next tab (like Ctrl + Page Up/Down)
@@ -127,6 +128,7 @@ CapsLock + + + + 	Make mouse Constrained (horizontaly or vertically)
 [Others]
 CapsLock + R 	Move the mouse cursor to the center of the active window
 CapsLock + E 	Move the active window to the mouse cursor
+CapsLock + Tab 	Press Enter
 	
 [FrogControl menu]
 CapsLock + ?	Help menu of FrogControl

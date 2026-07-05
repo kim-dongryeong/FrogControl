@@ -1374,10 +1374,7 @@ CapsLock & Right::
 	}
 return
 
-; It's for a test.
-#^!+K::
-	Tooltip, % " " GetKeyState("Down", "P") " " GetKeyState("up", "P") " " GetKeyState("right", "P") " " GetKeyState("left", "P") " " GetKeyState("CapsLock", "P")	
-Return
+; (removed a debug-only hotkey #^!+K that showed a key-state tooltip)
 
 ; (removed leftover debug combo `~Right & CapsLock::` — while the Right arrow was held it outranked
 ;  the plain CapsLock:: hotkey, making CapsLock completely dead: no toggle, no timestamp)
@@ -3348,17 +3345,6 @@ Print_Object(vObj, isFirst) {
 	Return print
 }
 
-; ===================== To show list of programs which you can see with Alt Tab =========================
-#^K::
-	altTab_List := AltTab_window_list()
-	Print_Windows_ListView(altTab_List, , "List of programs on the Alt Tab list")
-	newObj := altTab_List.Clone()
-	Sort_Object(newObj, "width", 1)	; to sort only among integr keys
-	Print_Windows_ListView(newObj, , "new Object")
-	Print_Windows_ListView(altTab_List, , "even altTab original")
-return
-; ===================== To show list of programs which you can see with Alt Tab ================== ends ====
-
 
 Sort_Object(vObj, vKey, mode, test := "") {	; to sort only among integr keys
 	; mode = 1 : ascending
@@ -3432,13 +3418,8 @@ fct_RemoveToolTip_time(_toolTipNo := 0, _update := false) {
 ;----------------------------------------------------------------------------------------
 ;----------------------------------------------------------------------------------------
 
-+F5::
-	Show_Windows("Explorer.exe", "", 0)
-Return
-
-+F6::
-	Show_Windows("Explorer.exe", "", 1)
-Return
+; (+F5/+F6 removed 2026-07-05: they were test aliases that became identical to +F1/+F2
+;  after the layout-engine unification; the documented hotkeys are +F1..+F4)
 
 +F3::
 	Show_Windows("", WinExist("A"), 0)
