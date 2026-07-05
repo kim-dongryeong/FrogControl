@@ -5,14 +5,14 @@ history
  in "K:\My Drive\_MainDrive\software-portable\AutoHotKey\dk-my macro")
 
 2.0.0-beta.1 (2026-07-05)
-New version scheme. The 1.15 alpha line effectively ends with 1.15.alpha.3 (2024); the long gap
-and the audit + refactor overhauls below mark the jump to 2.x. From now on: MAJOR.MINOR.PATCH,
-with -beta.N while stabilizing. (The 1.15.alpha.4 / 1.15.alpha.5 entries below are, in substance,
-the first 2.0 work - only the numbering changes here.)
+New version scheme. The 1.15 alpha line ends with 1.15.alpha.3 (2024); the long gap and the
+audit + refactor overhauls below mark the jump to 2.x. From now on: MAJOR.MINOR.PATCH, with
+-alpha.N / -beta.N pre-releases. The two 2026-07-05 releases below were renumbered retroactively
+into the 2.0 line (they were first committed as 1.15.alpha.4 / 1.15.alpha.5).
 - added a Reload item to the tray menu to apply script changes without exiting
   (re-running FrogControl.ahk also replaces the running instance thanks to #SingleInstance Force)
 
-1.15.alpha.5 (2026-07-05)
+2.0.0-alpha.2 (2026-07-05, git commit ccc170b; originally numbered 1.15.alpha.5)
 Refactoring and DWM border fix. The script file is now just "FrogControl.ahk" (the version lives in AppVersion and git, not in the filename).
 - NEW: window snapping and grid placement compensate for the invisible DWM borders of Windows 10/11, so snapped windows sit flush with no ~7-14 px gaps (CapsLock+LButton snap zones, CapsLock+Ctrl+Arrow grid, Show_Windows grid)
 - +F1/+F2 now delegate to Show_Windows() like +F5/+F6 (removed the old Explorer-only duplicate layout engine, ~830 lines; window filtering is now by process "Explorer.exe" instead of window class, same as +F5/+F6)
@@ -27,7 +27,7 @@ Refactoring and DWM border fix. The script file is now just "FrogControl.ahk" (t
 - removed the broken, unused ObjectClone()
 - net -871 lines (5,280 -> 4,409)
 
-1.15.alpha.4 (2026-07-05)
+2.0.0-alpha.1 (2026-07-05, git commit 1a1a233; originally numbered 1.15.alpha.4)
 Full audit pass: many bug fixes and performance optimizations. No hotkey changes.
 Performance:
 - CapsLock + Wheel scroll no longer enumerates every open window on each wheel notch (the biggest win)
