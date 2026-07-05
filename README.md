@@ -12,7 +12,7 @@ For example, it will make it easier to move, resize, minimize and close windows 
 - Windows
 - AutoHotkey v1.1 — this script uses AutoHotkey v1 syntax and does **not** run on AutoHotkey v2.
 
-Run `FrogControl.ahk` with AutoHotkey v1.1 installed. The shortcut list files (`shortcut list-en.txt`, `shortcut list-ko.txt`) and the icon should stay next to the script.
+Run `FrogControl.ahk` with AutoHotkey v1.1 installed. The `lib/` folder, the shortcut list files (`shortcut list-en.txt`, `shortcut list-ko.txt`) and the icon must stay next to the script.
 
 
 -------------

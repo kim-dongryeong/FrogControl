@@ -4,6 +4,26 @@ history
 (older entries consolidated from the history.txt files kept alongside pre-git versions
  in "K:\My Drive\_MainDrive\software-portable\AutoHotKey\dk-my macro")
 
+2.1.0 (2026-07-05)
+Deduplication milestone: the whole refactor backlog is done. FrogControl.ahk now holds only
+hotkeys and the auto-execute section (~2,600 lines); all functions live in lib/ modules
+(FC_Bookmarks, FC_AltTab, FC_Arrange, FC_Helpers).
+- removed +F5/+F6 (test aliases that became identical to +F1/+F2) and two debug hotkeys;
+  shortcut lists now also document Win+Ctrl+Shift+Alt+RightClick and CapsLock+Tab
+- four window-rotation hotkey bodies unified into WindowRotate_OnWheel()
+- windowSeekArrow's four ~46-line direction blocks unified into one dot/cross-scored finder
+  (windows straight above/below/beside are now always reachable; selection near diagonal
+  boundaries can differ slightly from the old cone tests)
+- twelve monitor-edge scan loops unified into Monitor_EdgeScan()
+- 23 "AlwaysOnTop On/Off" pairs unified into PulseTop(); spread layouts activate one window
+  per arrangement instead of every window in the loop (less flicker and focus churn)
+- Show_Windows grid is computed from the window count and screen aspect ratio
+  (replaces the fixed 800x450 cells and the grid-growing loop)
+- DWM border compensation extended to edge moves (CapsLock+Shift+Arrow), edge resizes
+  (Win+Alt+Shift+Arrow) and all spread layouts - windows sit flush everywhere now
+- date-and-time input mode falls back to the mouse position in apps that expose no caret
+- Ctrl+Shift+Alt+RightClick guards against an empty window under the mouse
+
 2.0.0 (2026-07-05)
 New version scheme. The 1.15 alpha line ends with 1.15.alpha.3 (2024); the long gap and the
 audit + refactor overhauls below mark the jump to 2.x. From now on, plain MAJOR.MINOR.PATCH
