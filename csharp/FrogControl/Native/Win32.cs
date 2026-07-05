@@ -202,6 +202,7 @@ internal static class Win32
     public const uint SPI_SETBEEP = 0x0002;
     public const uint SPI_GETWHEELSCROLLLINES = 0x0068;
     public const uint SPI_SETWHEELSCROLLLINES = 0x0069;
+    public const uint SPI_SETFOREGROUNDLOCKTIMEOUT = 0x2001;
 
     // DWM
     public const uint DWMWA_EXTENDED_FRAME_BOUNDS = 9;
@@ -449,7 +450,7 @@ internal static class Win32
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
 
-    [DllImport("user32.dll")]
+    [DllImport("kernel32.dll")]   // NB: GetCurrentThreadId lives in kernel32, not user32
     public static extern uint GetCurrentThreadId();
 
     [DllImport("user32.dll")]

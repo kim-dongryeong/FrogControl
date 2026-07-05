@@ -18,6 +18,11 @@ internal static class Program
         // Per-monitor-v2 DPI so mouse/window coordinates are physical pixels everywhere
         // (mirrors the AHK SetThreadDpiAwarenessContext(-4) calls).
         Win32.SetThreadDpiAwarenessContext(Win32.DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+
+        // Let a background app call SetForegroundWindow reliably (window activation, bookmarks,
+        // rotation, seek all depend on it). Without this, Windows' foreground lock can block it.
+        Win32.SystemParametersInfo(Win32.SPI_SETFOREGROUNDLOCKTIMEOUT, 0, IntPtr.Zero, 0);
+
         Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);

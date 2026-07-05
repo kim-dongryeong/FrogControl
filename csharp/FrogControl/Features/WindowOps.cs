@@ -72,7 +72,7 @@ public static class WindowOps
             IntPtr mouseWin = WindowUnderCursor();
             WindowManager.Activate(mouseWin);
             if (WaitActive(mouseWin, 0.5))
-                InputSimulator.KeyCombo(0x57 /*W*/, Win32.VK_CONTROL);
+                InputSimulator.KeyComboIsolated(0x57 /*W*/, Win32.VK_CONTROL);   // clean Ctrl+W (not Ctrl+Shift+W)
         }
         finally { SystemParams.SetBeep(beep); }
     }
@@ -84,7 +84,7 @@ public static class WindowOps
         if (mouseWin == IntPtr.Zero) return;
         WindowManager.Activate(mouseWin);
         if (WaitActive(mouseWin, 0.5))
-            InputSimulator.KeyCombo(0x73 /*F4*/, Win32.VK_MENU);
+            InputSimulator.KeyComboIsolated(0x73 /*F4*/, Win32.VK_MENU);   // clean Alt+F4
     }
 
     // ---- Move helpers ----

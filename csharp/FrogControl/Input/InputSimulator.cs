@@ -30,6 +30,32 @@ public static class InputSimulator
         for (int i = modifiers.Length - 1; i >= 0; i--) KeyUp(modifiers[i]);
     }
 
+    private static readonly ushort[] AllModVks =
+    {
+        Win32.VK_LSHIFT, Win32.VK_RSHIFT, Win32.VK_LCONTROL, Win32.VK_RCONTROL,
+        Win32.VK_LMENU, Win32.VK_RMENU, Win32.VK_LWIN, Win32.VK_RWIN,
+    };
+
+    /// <summary>
+    /// Send a clean chord (only <paramref name="modifiers"/> active) even while the user is
+    /// physically holding other modifiers — mirrors AHK's Send, which temporarily lifts the
+    /// held modifiers so e.g. Ctrl+W isn't corrupted into Ctrl+Shift+W by a held Shift.
+    /// </summary>
+    public static void KeyComboIsolated(ushort key, params ushort[] modifiers)
+    {
+        // Lift every physically-held modifier so it can't contaminate the send.
+        var held = new List<ushort>();
+        foreach (var m in AllModVks)
+            if ((Win32.GetAsyncKeyState(m) & 0x8000) != 0)
+                held.Add(m);
+        foreach (var m in held) KeyUp(m);
+
+        KeyCombo(key, modifiers);
+
+        // Restore the modifiers the user is (still) holding.
+        foreach (var m in held) KeyDown(m);
+    }
+
     private static void SendKey(ushort vk, bool up)
     {
         bool extended = IsExtendedKey(vk);
