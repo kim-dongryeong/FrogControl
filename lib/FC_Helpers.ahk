@@ -163,6 +163,7 @@ ShowHelp(lang) {
 	Gui, %guiName%: Font
 	Gui, %guiName%: Add, Text, xm, % authorLabel
 	Gui, %guiName%: Add, Link, y+3, % "<a href=""mailto:" AppAuthorEmail """>" AppAuthorEmail "</a>"
+	Gui, %guiName%: Add, Text, xm, % "Free software under the GNU GPL v3."
 	Gui, %guiName%: Font
 	Gui, %guiName%: Add, Text, y+0, `t
 	Gui, %guiName%: Add, Button, GABOUTOK Default w75, &OK

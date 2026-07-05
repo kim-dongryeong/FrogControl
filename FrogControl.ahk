@@ -1,5 +1,15 @@
 ﻿#Requires AutoHotkey v1.1 	; v1 syntax - does NOT run on AutoHotkey v2
 ; ---------------------------------------------------------------
+; FrogControl - keyboard & mouse window-management shortcuts for Windows.
+; Copyright (C) 2015-2026 Kim Dongryeong <kdr@namouli.com>
+;
+; This program is free software: you can redistribute it and/or modify it under
+; the terms of the GNU General Public License as published by the Free Software
+; Foundation, either version 3 of the License, or (at your option) any later
+; version. It is distributed WITHOUT ANY WARRANTY; see the GNU GPL for details.
+; You should have received a copy of the GNU General Public License along with
+; this program (see the LICENSE file). If not, see <https://www.gnu.org/licenses/>.
+; ---------------------------------------------------------------
 AppName 		:= "FrogControl"
 AppAuthor 		:= "Kim Dongryeong"
 AppAuthorEmail	:= "kdr@namouli.com"

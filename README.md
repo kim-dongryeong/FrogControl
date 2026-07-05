@@ -11,7 +11,7 @@ Move, resize, snap, arrange, and navigate windows — plus control your mouse, v
 [![Version](https://img.shields.io/badge/version-2.1.0-4c9a4c)](history.txt)
 [![AutoHotkey](https://img.shields.io/badge/AutoHotkey-v1.1-334455)](https://www.autohotkey.com/)
 [![Platform](https://img.shields.io/badge/platform-Windows-0078d6)](#requirements)
-[![License](https://img.shields.io/badge/license-Free%20%26%20Open%20Source-brightgreen)](#license)
+[![License: GPL v3](https://img.shields.io/badge/license-GPLv3-brightgreen)](LICENSE)
 
 > [ GIF: CapsLock + drag a window into a corner → it snaps to a quarter of the screen ]
 
@@ -268,9 +268,9 @@ Ideas, bug reports, and feedback are very welcome — please [open an issue](htt
 
 ## License
 
-FrogControl is **free and open source**. You may use and distribute it on any computer, including in a commercial organization — no registration, no payment required.
+FrogControl is **free and open source software**, licensed under the **[GNU General Public License v3.0](LICENSE)**.
 
-> [ Optional: add a formal LICENSE file (e.g. MIT) to make reuse terms unambiguous. ]
+You may use, study, share, and modify it freely — including on computers in a commercial organization, with no registration or payment. If you distribute a modified version, you must also release your changes under the GPLv3 so the software (and everyone's improvements to it) stays free for the whole community.
 
 ## Author
 
