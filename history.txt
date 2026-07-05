@@ -1,0 +1,117 @@
+FrogControl
+history
+
+(older entries consolidated from the history.txt files kept alongside pre-git versions
+ in "K:\My Drive\_MainDrive\software-portable\AutoHotKey\dk-my macro")
+
+1.15.alpha.4 (2026-07-05)
+Full audit pass: many bug fixes and performance optimizations. No hotkey changes.
+Performance:
+- CapsLock + Wheel scroll no longer enumerates every open window on each wheel notch (the biggest win)
+- polling loops (window rotation/seek/move/resize, click-drag move/resize, ruler) no longer busy-wait; they sleep ~10 ms per pass, so a held gesture no longer pegs a CPU core
+- monitor info (SysGet) is no longer re-queried on every iteration of the CapsLock+Arrow move loop
+- windowSeekArrow recomputes window geometry only while an arrow key is actually pressed
+- AltTab_List_SameType no longer enumerates all windows three times
+- added #NoEnv, ListLines Off, #SingleInstance Force
+Fixed:
+- CapsLock modes (date input, mouse coordinates, mouse control) restored the INVERSE of the initial CapsLock state, flipping the CapsLock LED on every use
+- keyboard auto-repeat flooded the modifier time-stamp ring, pushing every "press N times to speed up" feature straight to maximum
+- monitor edge move/resize min/max scans ignored middle monitors (wrong edges on 3+ monitor setups)
+- windowSeekArrow could never reach a window directly above/below (division by zero silently produced a blank)
+- leftover debug code in the 3-window layout of Show_Windows (+F3/+F5): six debug windows, a blocking MsgBox and width corruption; the layout logic itself was repaired (sorting re-enabled, normalized widths, fresh sizes after WinRestore)
+- copy-paste X/Y mix-up placed the tallest window at a wrong vertical position in the 3-explorer vertical layout (+F1 and Show_Windows)
+- wheel window-rotation dropped queued scroll clicks; the stacking and popup rotation modes could corrupt each other's shared state
+- Shift-only wheel scroll in Excel/Word wrongly turned CapsLock off afterwards
+- Ctrl+Shift+RightClick (close tab) could hang forever waiting for activation, leaving the system beep disabled; each beep-toggling feature now keeps its own saved state
+- window move/resize loops now act on a snapshot of the active window, so a focus change mid-gesture can no longer move/resize the wrong window
+- grid move (CapsLock+Ctrl+Arrow) now detects the correct monitor for maximized windows (falls back to the primary if none matches)
+- GUI leaks: help windows, mouse-bookmark markers and window-list views accumulated invisibly when reopened
+- window transparency (Win+Alt+[ / ]) is clamped to the valid 0-255 range
+- help window shows a notice instead of an empty list when a shortcut list file is missing
+- Shift:: now passes the physical key through (~Shift::) instead of swallowing it and re-sending a synthetic tap
+- removed a leftover debug combo (~Right & CapsLock::) that made CapsLock completely dead while the Right arrow was held
+- Xbox / Movies & TV / Photos filtering in the window list actually compares the window class now
+- misc: typo, 64-bit overflow in a sentinel constant, wrong monitor index recorded in the +F2 grid path
+
+1.15.alpha.3 (2024-04-05)
+developed before this history file was added to the git repository; see git log
+(#^L added to show the Alt-Tab window list; help updated)
+
+1.15.alpha.1 - 1.15.alpha.2 (2023-01)
+intermediate alpha versions - details not recorded
+
+1.14 (2016-07-18)
+Fixed Help menu (finally)
+
+1.13 (2016-07-16)
+Fixed a little bug (Time stamp imput mode, Send -> SendRaw so that # shouldn't be translated to Windows key.)
+Fixed a little bug (CapsLock & D, Wheel right)
+For the slow wheel scroll, only CapsLock + `
+CapsLock + F1 is added to the window bookmark
+CapsLock + F10 is to show a list of the bookmarks
+Fixed Help menu
+
+1.12 (2016-06-27)
+Added CapsLock + Control + Left click = to activate the window under the mouse pointer.
+Expanded the special regions for the CapsLock + Left click move.
+
+1.11 (2016-06-25)
+rearranged several hotkeys such as:
+ - F3/4/6/7/8/9 -> Shift + F3/4/6/7/8/9
+ - Shift + Win + Alt + Control + arrow keys -> Shift + Win + Alt + arrow keys
+ - Mouse clicks and wheel controls by the left part keys on the keyboard
+ - CapsLock + E -> CapsLock + Tab
+ - CapsLock + Z/X/C -> CapsLock + E/R/+
+removed some hotkeys such as:
+ - resizing by 200 px (Shift + Win + Alt + arrow keys)
+extended mouse bookmarks to CapsLock + 1/2/.../0
+
+1.10
+Fixed some bugs (!+RButton:: will not work to always-on-top windows)
+
+1.9 (2015-12-10)
+Fixed some bugs (related to maximized window)
+
+1.8 (2015-12-09)
+Added a new function
+- now possible to control volume only by keyboard
+Changed hotkey combination for moving window because Windows 10's new hotkey, Ctrl+Win+Arrow Keys (to move to next Desktop)
+degraded some functions
+- CapsLock + Shift + Arrow Keys: Move window by 2 * 2 grid without resizing window
+- CapsLock + Alt + + Shift + Arrow Keys: Move window by 3 * 3 grid without resizing window
+first made it public
+
+1.7 (2015-12-07)
+added new functions:
+- closing tab by clikcing
+- closing window by clikcing
+- adjusing hotkey combinations
+- changed icon
+
+1.6 (2015-12-03)
+fixed bugs
+added some new functions:
+ - a micro volume control function
+ - Move the mouse cursor to the center of the active window
+supports multi screens
+optimized for Windows 8
+
+1.5 (2015-08-15)
+fixed a tiny bug
+
+1.4 (2015-08-11)
+Changed Win + Ctrl + C to CapsLock + Win + C. And the active window will move such that the center of the active window will move to the mouse pointer
+
+1.3 (2015-08-03)
+to support multiple displays
+added Win + Ctrl + O
+added Win + Ctrl + C
+added Win + [
+added Win + ]
+to add: to move window behind like Ctrl+[ in photoshop, to arrange some number of windows vertically, horizontally, and so on.
+
+1.2 (2015-05-30)
+improvements
+
+1.1 (2015-04-26)
+multifunctional keyboard and mouse shortcut and control program

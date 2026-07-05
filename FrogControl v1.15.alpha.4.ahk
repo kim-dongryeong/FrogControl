@@ -2,8 +2,8 @@
 AppName 		:= "FrogControl"
 AppAuthor 		:= "Kim Dongryeong"
 AppAuthorEmail	:= "kdr@namouli.com"
-AppUpdateDate 	:= "2024-04-05"
-AppVersion 		:= "1.15.alpha.3"
+AppUpdateDate 	:= "2026-07-05"
+AppVersion 		:= "1.15.alpha.4"
 AppSite			:= "https://github.com/kim-dongryeong/FrogControl"
 
 ; ---------------------------------------------------------------
@@ -35,9 +35,12 @@ AppSite			:= "https://github.com/kim-dongryeong/FrogControl"
 
 ;;; tray menu
 ;==================================
+#NoEnv  ; Prevent empty variables from falling back to environment variables (also faster variable lookup).
+#SingleInstance Force  ; Replace the old instance silently instead of showing a prompt when launched twice.
 #Persistent  ; Keep the script running until the user exits it.
 #MaxHotkeysPerInterval 2000
 ; #include Acc.ahk ; 2023-01-14 이거 없애보기
+ListLines, Off  ; Don't log executed lines; big speedup for the polling loops below.
 SetWinDelay, -1
 
 ;============ Settings ============
@@ -107,14 +110,9 @@ if OldName = Disable
     OldName = Enable
     NewName = Disable
     TrayTip
-	TrayTip, % "FrogControl", % "Hi again! Now enalbed", , 16
-	if (GetKeyState("CapsLock", "P")) {
-		if (GetKeyState("CapsLock", "T")) {
-			SetCapsLockState, off
-		} else {
-			SetCapsLockState, on
-		}
-	}
+	TrayTip, % "FrogControl", % "Hi again! Now enabled", , 16
+	; (removed a block here that flipped the real CapsLock toggle state on resume via CapsLock+F12;
+	;  CapsLock stays a suppressed prefix during suspension, so no compensation is needed)
 }
 else
 {
@@ -127,6 +125,7 @@ menu, tray, rename, %OldName%, %NewName%
 return
 
 MenuHandlerEn:
+Gui, helpEn: Destroy 	; Gui New does NOT replace an existing window of the same name; without this, windows accumulate
 Gui, helpEn: New
 If( !A_IsCompiled && FileExist(A_ScriptDir . "\frog face icon 3.ico")) {
 	Gui, helpEn: Add , Picture, w40 h40, %A_ScriptDir%\frog face icon 3.ico
@@ -139,6 +138,8 @@ Gui, helpEn:Font
 Gui, helpEn:Add,Text,xm, Shortcut list
 Gui, helpEn:Font, , Consolas
 Gui, helpEn: Add, ListView, r25 w1111, Hotkey|Action
+if (!FileExist(A_ScriptDir . "\shortcut list-en.txt"))
+	LV_Add("", "(file not found)", A_ScriptDir . "\shortcut list-en.txt")
 Loop, read, %A_ScriptDir%\shortcut list-en.txt
 {
 	inLine_1 := ""
@@ -172,6 +173,7 @@ Gui,Destroy
 Return
 
 MenuHandlerKo:
+Gui, helpKo: Destroy 	; Gui New does NOT replace an existing window of the same name; without this, windows accumulate
 Gui, helpKo: New
 If( !A_IsCompiled && FileExist(A_ScriptDir . "\frog face icon 3.ico")) {
 	Gui, helpKo: Add , Picture, w40 h40, %A_ScriptDir%\frog face icon 3.ico
@@ -184,6 +186,8 @@ Gui, helpKo:Font
 Gui, helpKo:Add,Text,xm, % "단축키 목록"
 Gui, helpKo:Font, , Consolas
 Gui, helpKo: Add, ListView, r25 w1111, Hotkey|Action
+if (!FileExist(A_ScriptDir . "\shortcut list-ko.txt"))
+	LV_Add("", "(file not found)", A_ScriptDir . "\shortcut list-ko.txt")
 Loop, read, %A_ScriptDir%\shortcut list-ko.txt
 {
 	inLine_1 := ""
@@ -262,7 +266,7 @@ Return
         if curtrans != 0    ; curtrans is not 0 (so not assigned)
             curtrans := 255
     }
-    curtrans := curtrans + 20
+    curtrans := curtrans + 20 > 255 ? 255 : curtrans + 20 	; clamp to the valid 0-255 range
 	WinSet, Transparent, %curtrans%, A
 return
 
@@ -275,7 +279,7 @@ return
         if curtrans != 0 ; curtrans is not 0. (so not assigned)
             curtrans := 255
     }
-    curtrans := curtrans - 20
+    curtrans := curtrans - 20 < 0 ? 0 : curtrans - 20 	; clamp to the valid 0-255 range (prevents out-of-range values)
     WinSet, Transparent, %curtrans%, A
 
 return
@@ -336,15 +340,16 @@ Return
 ;; to close a tab (like Ctrl + W) by Control + Shift + Right Click
 ;; while the original active window will be still active
 ^+RButton::
-	DllCall("SystemParametersInfo", UInt, 0x0001, UInt, 0, UIntP, initial_beep_setting, UInt,0) 
+	DllCall("SystemParametersInfo", UInt, 0x0001, UInt, 0, UIntP, beep_rbtn, UInt,0)
 	DllCall("SystemParametersInfo", UInt, 0x0002, UInt, 0, UInt,0, UInt,0) 	; SPI_SETBEEP : 0x0002
 	MouseGetPos, , , mousewin
 	WinGet, var_id, ID, A
 	WinActivate, ahk_id %mousewin%
-	WinWaitActive, ahk_id %mousewin%
-	SendEvent, ^w
+	WinWaitActive, ahk_id %mousewin%, , 0.5 	; timeout: without it this thread could hang forever with the beep left disabled
+	if (!ErrorLevel)
+		SendEvent, ^w
 	;WinActivate, ahk_id %var_id%  	; if it's presented, minor error: no tab closed.  -> What I meant before?
-	DllCall("SystemParametersInfo", UInt, 0x0002, UInt, initial_beep_setting, UInt,0, UInt,0) 	; SPI_SETBEEP : 0x0002
+	DllCall("SystemParametersInfo", UInt, 0x0002, UInt, beep_rbtn, UInt,0, UInt,0) 	; SPI_SETBEEP : 0x0002
 return
 
 
@@ -406,6 +411,8 @@ Return
 
 !^WheelDown::
 !^[::
+	if (window_rotate_firstcheck_popup) 	; a Win+Alt+Ctrl popup rotation is still live; don't touch its shared state
+		return
 	if (!window_rotate_firstcheck) { ;; if it's first time or it is 0
 		window_rotate_firstcheck := 1
 		wheel_count_down := 1
@@ -431,7 +438,9 @@ return
 
 !^WheelUp::
 !^]::
-	if (!window_rotate_firstcheck) { 
+	if (window_rotate_firstcheck_popup) 	; a Win+Alt+Ctrl popup rotation is still live; don't touch its shared state
+		return
+	if (!window_rotate_firstcheck) {
 		window_rotate_firstcheck := 1
 		wheel_count_down := -1
 		wheel_count_check := 0
@@ -460,6 +469,7 @@ window_rotate_stacking:
 	WinActivate, ahk_class Shell_TrayWnd 	; The original active window will be still active even if it goes the bottom or something comes on it, which causes that even if you click the original window, it won't come to the topmost. Therefore, instead deactivate it.
 	; The main loop
 	Loop {
+		Sleep, 10 	; poll ~100x/s instead of busy-waiting (CPU)
 		;Tooltip looping window_rotate_stacking FLAG_HALFTRANS IS %FLAG_HALFTRANS%
 		if (!(GetKeyState("Alt", "P")) or !(GetKeyState("control", "P"))) {
 			WinActivate, % "ahk_id " AltTab_ID_List_%window_rotate_current% 	; AltTab_window_list() is not perfect so it may activate unwanted window or it may fail to activate the visually topmost window
@@ -498,7 +508,7 @@ window_rotate_stacking:
 			tooltip % wintitle
 			SetTimer, RemoveToolTip, % SETTING_CONSTANT_TOOLTIPDUR_S 
 
-			wheel_count_check := wheel_count_down
+			wheel_count_check ++ 	; advance one step per processed window instead of snapping (which dropped queued scroll clicks)
 		}
 		if (wheel_count_down < wheel_count_check) {
 
@@ -514,7 +524,7 @@ window_rotate_stacking:
 			tooltip % wintitle
 			SetTimer, RemoveToolTip, % SETTING_CONSTANT_TOOLTIPDUR_S 
 
-			wheel_count_check := wheel_count_down
+			wheel_count_check -- 	; advance one step per processed window instead of snapping (which dropped queued scroll clicks)
 		}
 	}
 return
@@ -525,6 +535,8 @@ return
 ; ================= Temporary showing around ==================== starts ============================
 #!^WheelDown::
 #!^[::
+	if (window_rotate_firstcheck) 	; an Alt+Ctrl stacking rotation is still live; don't touch its shared state
+		return
 	if (!window_rotate_firstcheck_popup) { ;; if it's first time or it is 0
 		window_rotate_firstcheck_popup := 1
 		wheel_count_down := 1
@@ -547,7 +559,9 @@ return
 
 #!^WheelUp::
 #!^]::
-	if (!window_rotate_firstcheck_popup) { 
+	if (window_rotate_firstcheck) 	; an Alt+Ctrl stacking rotation is still live; don't touch its shared state
+		return
+	if (!window_rotate_firstcheck_popup) {
 		window_rotate_firstcheck_popup := 1
 		wheel_count_down := -1
 		wheel_count_check := 0
@@ -573,6 +587,7 @@ window_rotate_popup:
 	WinActivate, ahk_class Shell_TrayWnd 	; The original active window will be still active even if it goes the bottom or something comes on it, which causes that even if you click the original window, it won't come to the topmost. Therefore, instead deactivate it.
 
 	Loop {
+		Sleep, 10 	; poll ~100x/s instead of busy-waiting (CPU)
 		if (!FLAG_HALFTRANS) {
 			Loop, %AltTab_ID_List_0% {
 			    WinGet, original_trans%A_Index%, Transparent, % "ahk_id " AltTab_ID_List_%A_index%
@@ -636,7 +651,7 @@ window_rotate_popup:
 			tooltip % wintitle
 			SetTimer, RemoveToolTip, % SETTING_CONSTANT_TOOLTIPDUR_S 
 
-			wheel_count_check := wheel_count_down
+			wheel_count_check ++ 	; advance one step per processed window instead of snapping (which dropped queued scroll clicks)
 		}
 
 		if (wheel_count_down < wheel_count_check) {
@@ -653,7 +668,7 @@ window_rotate_popup:
 			tooltip % wintitle
 			SetTimer, RemoveToolTip, % SETTING_CONSTANT_TOOLTIPDUR_S 
 
-			wheel_count_check := wheel_count_down
+			wheel_count_check -- 	; advance one step per processed window instead of snapping (which dropped queued scroll clicks)
 		}
 	}
 return
@@ -754,6 +769,8 @@ GetKeyState, is_up, Up, P
 
 	; The main loop to receive arrow key inputs
 	Loop, {
+		Sleep, 10 	; poll ~100x/s instead of busy-waiting (CPU)
+		if (is_right = "D" or is_left = "D" or is_down = "D" or is_up = "D") { 	; recompute window geometry only when an arrow is actually pressed
 		window_previous := window_current 	; window_previous is a previous window_current at a previous arrow key.
 		WinGetPos, window_previous_x, window_previous_y, window_previous_w, window_previous_h, % "ahk_id " AltTab_ID_List_woMinWin_%window_previous%
 		window_previous_cen_x := window_previous_x + window_previous_w/2
@@ -769,9 +786,10 @@ GetKeyState, is_up, Up, P
 			window_rel_coor_from_cur%A_Index%_y := temp_cen_y - window_previous_cen_y
 			window_rel_coor_from_cur%A_Index%_d2 := window_rel_coor_from_cur%A_Index%_x**2 + window_rel_coor_from_cur%A_Index%_y**2
 		}
+		} 	; end arrow-pressed geometry recompute
 
 		if (is_right = "D") { 	; If we use GetKeyState(), then because it's distant between the start and the loop, meantime the first arrow key (which triggered the hotkey) state may be up when it arrives at the loop, which causes the first arrow stroke doesn't let it go to the next window!
-			window_current_ScanningNext_d2 := 01100001011001010110100101101110
+			window_current_ScanningNext_d2 := 0x7FFFFFFFFFFFFFFF 	; effectively infinity (the old huge decimal literal overflowed 64-bit range)
 			window_current_ScanningNext_ID := ""
 
 			WinSet, Transparent, % SETTING_CONSTANT_HALFTRANS, % "ahk_id " AltTab_ID_List_woMinWin_%window_current%
@@ -819,7 +837,7 @@ GetKeyState, is_up, Up, P
 		}
 
 		if (is_left = "D") { 	; If we use GetKeyState(), then because it's distant between the start and the loop, meantime the first arrow key (which triggered the hotkey) state may be up when it arrives at the loop, which causes the first arrow stroke doesn't let it go to the next window!
-			window_current_ScanningNext_d2 := 01100001011001010110100101101110
+			window_current_ScanningNext_d2 := 0x7FFFFFFFFFFFFFFF 	; effectively infinity (the old huge decimal literal overflowed 64-bit range)
 			window_current_ScanningNext_ID := ""
 
 			WinSet, Transparent, % SETTING_CONSTANT_HALFTRANS, % "ahk_id " AltTab_ID_List_woMinWin_%window_current%
@@ -867,7 +885,7 @@ GetKeyState, is_up, Up, P
 		}
 
 		if (is_down = "D") { 	; If we use GetKeyState(), then because it's distant between the start and the loop, meantime the first arrow key (which triggered the hotkey) state may be up when it arrives at the loop, which causes the first arrow stroke doesn't let it go to the next window!
-			window_current_ScanningNext_d2 := 01100001011001010110100101101110
+			window_current_ScanningNext_d2 := 0x7FFFFFFFFFFFFFFF 	; effectively infinity (the old huge decimal literal overflowed 64-bit range)
 			window_current_ScanningNext_ID := ""
 
 			WinSet, Transparent, % SETTING_CONSTANT_HALFTRANS, % "ahk_id " AltTab_ID_List_woMinWin_%window_current%
@@ -875,7 +893,7 @@ GetKeyState, is_up, Up, P
 			Loop, %AltTab_ID_List_woMinWin_0% { 	; The main loop to find a next window
 				if (A_Index = window_previous)  	; skip itself
 					continue
-				pos_det_y := window_rel_coor_from_cur%A_Index%_y/abs(window_rel_coor_from_cur%A_Index%_x)
+				pos_det_y := (window_rel_coor_from_cur%A_Index%_x = 0) ? ((window_rel_coor_from_cur%A_Index%_y > 0) ? 999999 : -999999) : window_rel_coor_from_cur%A_Index%_y/abs(window_rel_coor_from_cur%A_Index%_x) 	; guard the x=0 case: division by zero yields blank in v1, which silently skipped windows directly above/below
 				if (window_rel_coor_from_cur%A_Index%_d2 = 0) {
 					if (AltTab_ID_List_woMinWin_%window_previous% < AltTab_ID_List_woMinWin_%A_Index%) {
 						if ((AltTab_ID_List_woMinWin_%A_Index% < AltTab_ID_List_woMinWin_%window_current%) or (window_current_ScanningNext_ID = "")) { 	; AltTab_ID_List_woMinWin_%window_current% == window_current_ScanningNext_ID
@@ -916,7 +934,7 @@ GetKeyState, is_up, Up, P
 
 
 		if (is_up = "D") { 	; If we use GetKeyState(), then because it's distant between the start and the loop, meantime the first arrow key (which triggered the hotkey) state may be up when it arrives at the loop, which causes the first arrow stroke doesn't let it go to the next window!
-			window_current_ScanningNext_d2 := 01100001011001010110100101101110
+			window_current_ScanningNext_d2 := 0x7FFFFFFFFFFFFFFF 	; effectively infinity (the old huge decimal literal overflowed 64-bit range)
 			window_current_ScanningNext_ID := ""
 
 			WinSet, Transparent, % SETTING_CONSTANT_HALFTRANS, % "ahk_id " AltTab_ID_List_woMinWin_%window_current%
@@ -924,7 +942,7 @@ GetKeyState, is_up, Up, P
 			Loop, %AltTab_ID_List_woMinWin_0% { 	; The main loop to find a next window
 				if (A_Index = window_previous)  	; skip itself
 					continue
-				pos_det_y := window_rel_coor_from_cur%A_Index%_y/abs(window_rel_coor_from_cur%A_Index%_x)
+				pos_det_y := (window_rel_coor_from_cur%A_Index%_x = 0) ? ((window_rel_coor_from_cur%A_Index%_y > 0) ? 999999 : -999999) : window_rel_coor_from_cur%A_Index%_y/abs(window_rel_coor_from_cur%A_Index%_x) 	; guard the x=0 case: division by zero yields blank in v1, which silently skipped windows directly above/below
 				if (window_rel_coor_from_cur%A_Index%_d2 = 0) {
 					if (AltTab_ID_List_woMinWin_%window_previous% < AltTab_ID_List_woMinWin_%A_Index%) {
 						if ((AltTab_ID_List_woMinWin_%A_Index% < AltTab_ID_List_woMinWin_%window_current%) or (window_current_ScanningNext_ID = "")) { 	; AltTab_ID_List_woMinWin_%window_current% == window_current_ScanningNext_ID
@@ -1104,11 +1122,12 @@ Return
 			; first unminimize or unmaximize all File Explorers in order to prevent WinMove from not working, and in order to get proper width and height.
 			WinRestore, % "ahk_id " AltTab_ID_List_FileExplorer_%A_Index%
 
-			WinGetPos, temp_x, temp_y, temp_w, temp_h, % "ahk_id " AltTab_ID_List_FileExplorer_%A_Index%
-			; It's needed to spread windows across all monitors 
+			index1 := A_Index
+			WinGetPos, temp_x, temp_y, temp_w, temp_h, % "ahk_id " AltTab_ID_List_FileExplorer_%index1%
+			; It's needed to spread windows across all monitors
 			loop, %monitor_no% {
 				if (monitor_%A_Index%_left <= temp_x + temp_w/2) and (temp_x + temp_w/2 <= monitor_%A_Index%_right - 1) and (monitor_%A_Index%_top <= temp_y + temp_h/2) and (temp_y + temp_h/2 <= monitor_%A_Index%_bottom - 1) {		; monitors' lefts and rights are like 0 ~ 2560, -1920 ~ 0.
-					AltTab_ID_List_FileExplorer_%AltTab_ID_List_FileExplorer_0%_mon := A_Index
+					AltTab_ID_List_FileExplorer_%index1%_mon := A_Index 	; (was indexing with ..._0, which always wrote to the last explorer's slot)
 					AltTab_ID_List_FileExplorer_inMon_%A_Index%_all_w += temp_w 	; Sum of widths of all File Explorers in each monitor
 					AltTab_ID_List_FileExplorer_inMon_%A_Index%_all_h += temp_h 	; Sum of heights of all File Explorers in each monitor
 				}
@@ -1541,7 +1560,7 @@ Return
 					spreadFExp_right := spreadFExp_left + horizontalLength_norm_net / monitor_%monitor_no_prm%_workarea_ratio
 
 					WinMove, % "ahk_id " FExpStack_topFExp, , spreadFExp_right - (FExpStack_rightFExp_w_norm + FExpStack_topFExp_w_norm) / monitor_%monitor_no_prm%_workarea_ratio, spreadFExp_bottom - (FExpStack_bottomFExp_h_norm + FExpStack_topFExp_h_norm)
-					WinMove, % "ahk_id " FExpStack_rightFExp, , spreadFExp_right - FExpStack_rightFExp_w_norm / monitor_%monitor_no_prm%_workarea_ratio, spreadFExp_left
+					WinMove, % "ahk_id " FExpStack_rightFExp, , spreadFExp_right - FExpStack_rightFExp_w_norm / monitor_%monitor_no_prm%_workarea_ratio, spreadFExp_top 	; (was spreadFExp_left — an X value pasted into the Y slot)
 					WinMove, % "ahk_id " FExpStack_bottomFExp, , spreadFExp_left, spreadFExp_bottom - FExpStack_bottomFExp_h_norm
 				}
 				
@@ -1891,9 +1910,22 @@ CapsLock & Right::
 	control_triggered := 0
 	capSpeedUpArrowKey := 0
 
+	; to collect the displays info about each monitor (hoisted out of the loop below; it used to be re-queried every iteration):
+	; SysGet: Retrieves screen resolution, multi-monitor info, dimensions of system objects, and other system properties.
+	; Sub-command: MonitorCount, Monitor [, N], MonitorWorkArea, etc.
+	SysGet, monitor_no, MonitorCount
+	Loop, %monitor_no% {
+	    SysGet, Monitor_%A_Index%_, Monitor, %A_Index%
+	    SysGet, Monitor_%A_Index%_WorkArea_, MonitorWorkArea, %A_Index%
+		monitor_%A_Index%_workarea_width := monitor_%A_Index%_workarea_right - monitor_%A_Index%_workarea_left
+		monitor_%A_Index%_workarea_height := monitor_%A_Index%_workarea_bottom - monitor_%A_Index%_workarea_top
+	}
 
 	loop {
-		WinGetPos, X,Y,W,H,A  ; "A" to get the active window's pos.
+		WinGet, wm_target_id, ID, A 	; snapshot the active window once per iteration, so a focus change between the position read and the move cannot hand this window's coordinates to a different window
+		if (wm_target_id = "")
+			wm_target_id := 0 	; no active window: "ahk_id 0" matches nothing, so the moves below silently do nothing
+		WinGetPos, X,Y,W,H, ahk_id %wm_target_id%
 
 		GetKeyState, is_ctrl, Ctrl, P
 		GetKeyState, is_up, Up, P
@@ -1927,19 +1959,19 @@ CapsLock & Right::
 				}
 */
 				if (is_right = "D") {
-					WinMove,A,, X + SETTING_CONSTANT_WINMOV_PX_S,
+					WinMove, ahk_id %wm_target_id%,, X + SETTING_CONSTANT_WINMOV_PX_S,
 					KeyWait, Right, % "T" "0.005"
 				} 
 				if (is_left = "D") {
-					WinMove,A,, X - SETTING_CONSTANT_WINMOV_PX_S,
+					WinMove, ahk_id %wm_target_id%,, X - SETTING_CONSTANT_WINMOV_PX_S,
 					KeyWait, Left, % "T" "0.005"
 				} 
 				if (is_up = "D") {
-					WinMove,A,,, Y - SETTING_CONSTANT_WINMOV_PX_S
+					WinMove, ahk_id %wm_target_id%,,, Y - SETTING_CONSTANT_WINMOV_PX_S
 					KeyWait, Up, % "T" "0.005"
 				} 
 				if (is_down = "D") {
-					WinMove,A,,, Y + SETTING_CONSTANT_WINMOV_PX_S
+					WinMove, ahk_id %wm_target_id%,,, Y + SETTING_CONSTANT_WINMOV_PX_S
 					KeyWait, Down, % "T" "0.005"
 				}
 
@@ -1951,34 +1983,23 @@ CapsLock & Right::
 				;; CapsLock + Win + Arrow Key
 
 				if (is_right = "D") {
-					WinMove,A,, X + SETTING_CONSTANT_WINMOV_PX_S,
+					WinMove, ahk_id %wm_target_id%,, X + SETTING_CONSTANT_WINMOV_PX_S,
 					KeyWait, Right, % "T" SETTING_CONSTANT_WINMOV_PX_S_RepSec
 				} 
 				if (is_left = "D") {
-					WinMove,A,, X - SETTING_CONSTANT_WINMOV_PX_S,
+					WinMove, ahk_id %wm_target_id%,, X - SETTING_CONSTANT_WINMOV_PX_S,
 					KeyWait, Left, % "T" SETTING_CONSTANT_WINMOV_PX_S_RepSec
 				} 
 				if (is_up = "D") {
-					WinMove,A,,, Y - SETTING_CONSTANT_WINMOV_PX_S
+					WinMove, ahk_id %wm_target_id%,,, Y - SETTING_CONSTANT_WINMOV_PX_S
 					KeyWait, Up, % "T" SETTING_CONSTANT_WINMOV_PX_S_RepSec
 				} 
 				if (is_down = "D") {
-					WinMove,A,,, Y + SETTING_CONSTANT_WINMOV_PX_S
+					WinMove, ahk_id %wm_target_id%,,, Y + SETTING_CONSTANT_WINMOV_PX_S
 					KeyWait, Down, % "T" SETTING_CONSTANT_WINMOV_PX_S_RepSec
 				}
 			}
-		} else { 	; Without Win key.
-			; to collect the displays info about each monitor:
-			; SysGet: Retrieves screen resolution, multi-monitor info, dimensions of system objects, and other system properties.
-			; Sub-command: MonitorCount, Monitor [, N], MonitorWorkArea, etc.
-			SysGet, monitor_no, MonitorCount	
-			Loop, %monitor_no% {
-			    SysGet, Monitor_%A_Index%_, Monitor, %A_Index%
-			    SysGet, Monitor_%A_Index%_WorkArea_, MonitorWorkArea, %A_Index%
-				monitor_%A_Index%_workarea_width := monitor_%A_Index%_workarea_right - monitor_%A_Index%_workarea_left
-				monitor_%A_Index%_workarea_height := monitor_%A_Index%_workarea_bottom - monitor_%A_Index%_workarea_top
-			}
-
+		} else { 	; Without Win key.  (monitor info is collected once, before this loop)
 			if (is_shift = "D") {
 
 				;; move to an edge
@@ -1995,8 +2016,8 @@ CapsLock & Right::
 					}
 					min_i := x1
 					loop, %i% {
-						if (x%i% < min_i) {
-							min_i := x%i%
+						if (x%A_Index% < min_i) {
+							min_i := x%A_Index%
 						}
 					}
 				
@@ -2009,21 +2030,21 @@ CapsLock & Right::
 					}
 					min_j := x1
 					loop, %j% {
-						if (x%j% < min_j) {
-							min_j := x%j%
+						if (x%A_Index% < min_j) {
+							min_j := x%A_Index%
 						}
 					}
 				
 					if (i > 0) and (j > 0) {
 						if (min_i - X - W < min_j - X) {
-							WinMove, A, , min_i - W
+							WinMove, ahk_id %wm_target_id%, , min_i - W
 						} else {
-							WinMove, A, , min_j
+							WinMove, ahk_id %wm_target_id%, , min_j
 						}
 					} else if (i > 0) {				; generally at the most right side
-						WinMove, A, , min_i - W
+						WinMove, ahk_id %wm_target_id%, , min_i - W
 					} else if (j > 0) {				; if a window is so big that its right side is over the screen. But its left side can go further right to attach an edge of a screen (it happens when using multi screens or its left is also over the screen)
-						WinMove, A, , min_j
+						WinMove, ahk_id %wm_target_id%, , min_j
 					}
 					KeyWait, Right, % "T" SETTING_CONSTANT_WINMOV_STEP_REP
 				}
@@ -2037,8 +2058,8 @@ CapsLock & Right::
 					}
 					max_i := x1
 					loop, %i% {
-						if (x%i% > max_i) {
-							max_i := x%i%
+						if (x%A_Index% > max_i) {
+							max_i := x%A_Index%
 						}
 					}
 
@@ -2051,21 +2072,21 @@ CapsLock & Right::
 					}
 					max_j := x1
 					loop, %j% {
-						if (x%j% > max_j) {
-							max_j := x%j%
+						if (x%A_Index% > max_j) {
+							max_j := x%A_Index%
 						}
 					}
 
 					if (i > 0) and (j > 0) {
 						if (X - max_i < X + W - max_j) {
-							WinMove, A, , max_i
+							WinMove, ahk_id %wm_target_id%, , max_i
 						} else {
-							WinMove, A, , max_j - W
+							WinMove, ahk_id %wm_target_id%, , max_j - W
 						}
 					} else if (i > 0) {
-						WinMove, A, , max_i
+						WinMove, ahk_id %wm_target_id%, , max_i
 					} else if (j > 0) {
-						WinMove, A, , max_j - W
+						WinMove, ahk_id %wm_target_id%, , max_j - W
 					}
 					KeyWait, Left, % "T" SETTING_CONSTANT_WINMOV_STEP_REP
 				}
@@ -2079,8 +2100,8 @@ CapsLock & Right::
 					}
 					max_i := x1
 					loop, %i% {
-						if (x%i% > max_i) {
-							max_i := x%i%
+						if (x%A_Index% > max_i) {
+							max_i := x%A_Index%
 						}
 					}
 
@@ -2093,21 +2114,21 @@ CapsLock & Right::
 					}
 					max_j := x1
 					loop, %j% {
-						if (x%j% > max_j) {
-							max_j := x%j%
+						if (x%A_Index% > max_j) {
+							max_j := x%A_Index%
 						}
 					}
 
 					if (i > 0) and (j > 0) {
 						if (Y - max_i < Y + H - max_j) {
-							WinMove, A, , , max_i
+							WinMove, ahk_id %wm_target_id%, , , max_i
 						} else {
-							WinMove, A, , , max_j - H
+							WinMove, ahk_id %wm_target_id%, , , max_j - H
 						}
 					} else if (i > 0) {
-						WinMove, A, , , max_i
+						WinMove, ahk_id %wm_target_id%, , , max_i
 					} else if (j > 0) {
-						WinMove, A, , , max_j - H
+						WinMove, ahk_id %wm_target_id%, , , max_j - H
 					}
 					KeyWait, Up, % "T" SETTING_CONSTANT_WINMOV_STEP_REP
 				}
@@ -2121,8 +2142,8 @@ CapsLock & Right::
 					}
 					min_i := x1
 					loop, %i% {
-						if (x%i% < min_i) {
-							min_i := x%i%
+						if (x%A_Index% < min_i) {
+							min_i := x%A_Index%
 						}
 					}
 
@@ -2135,21 +2156,21 @@ CapsLock & Right::
 					}
 					min_j := x1
 					loop, %j% {
-						if (x%j% < min_j) {
-							min_j := x%j%
+						if (x%A_Index% < min_j) {
+							min_j := x%A_Index%
 						}
 					}
 
 					if (i > 0) and (j > 0) {
 						if (min_i - Y - H < min_j - Y) {
-							WinMove, A, , , min_i - H
+							WinMove, ahk_id %wm_target_id%, , , min_i - H
 						} else {
-							WinMove, A, , , min_j
+							WinMove, ahk_id %wm_target_id%, , , min_j
 						}
 					} else if (i > 0) {
-						WinMove, A, , , min_i - H
+						WinMove, ahk_id %wm_target_id%, , , min_i - H
 					} else if (j > 0) {
-						WinMove, A, , , min_j
+						WinMove, ahk_id %wm_target_id%, , , min_j
 					}
 					KeyWait, Down, % "T" SETTING_CONSTANT_WINMOV_STEP_REP
 				}
@@ -2158,14 +2179,8 @@ CapsLock & Right::
 
 				;; moving in grid with Arrow Key
 
-				loop, %monitor_no% {
-					if (monitor_%A_Index%_left <= X) and (X <= monitor_%A_Index%_right - 1) and (monitor_%A_Index%_top <= Y) and (Y <= monitor_%A_Index%_bottom - 1) {		; monitors' lefts and rights are like 0 ~ 2560, -1920 ~ 0.
-						ScreenWoTaskbar_X := monitor_%A_Index%_workarea_left
-						ScreenWoTaskbar_Y := monitor_%A_Index%_workarea_top
-						ScreenWoTaskbar_W := monitor_%A_Index%_workarea_width
-						ScreenWoTaskbar_H := monitor_%A_Index%_workarea_height
-					}
-				}
+				; (the monitor-detection loop moved into the is_ctrl branch below: it must run AFTER WinRestore,
+				;  because a maximized window's raw rect lies outside every monitor's full bounds)
 
 				; General idea is to use ceil() function. 
 
@@ -2187,7 +2202,27 @@ CapsLock & Right::
 				;									  3,  3 < x <= 4
 				
 				if (is_ctrl = "D") {
-					WinRestore, A
+					WinRestore, ahk_id %wm_target_id%
+					WinGetPos, X,Y,W,H, ahk_id %wm_target_id% 	; re-read after restoring: a maximized window's raw rect (e.g. -8,-8) lies outside every monitor's full bounds
+					cenX := X + W/2
+					cenY := Y + H/2
+					foundMon := 0
+					loop, %monitor_no% {
+						if (monitor_%A_Index%_left <= cenX) and (cenX < monitor_%A_Index%_right) and (monitor_%A_Index%_top <= cenY) and (cenY < monitor_%A_Index%_bottom) {		; half-open ranges partition the desktop exactly even for fractional centers
+							ScreenWoTaskbar_X := monitor_%A_Index%_workarea_left
+							ScreenWoTaskbar_Y := monitor_%A_Index%_workarea_top
+							ScreenWoTaskbar_W := monitor_%A_Index%_workarea_width
+							ScreenWoTaskbar_H := monitor_%A_Index%_workarea_height
+							foundMon := 1
+						}
+					}
+					if (foundMon = 0) {		; window center is on no monitor: fall back to the primary so the WinMove below never gets blank/stale parameters
+						SysGet, monPrm, MonitorPrimary
+						ScreenWoTaskbar_X := monitor_%monPrm%_workarea_left
+						ScreenWoTaskbar_Y := monitor_%monPrm%_workarea_top
+						ScreenWoTaskbar_W := monitor_%monPrm%_workarea_width
+						ScreenWoTaskbar_H := monitor_%monPrm%_workarea_height
+					}
 
 					; to check how many controls were pushed and so as to set girdNo.
 					if (control_triggered = 0) {
@@ -2203,19 +2238,19 @@ CapsLock & Right::
 					}
 
 					if (is_up = "D") {
-						WinMove, A,, , ScreenWoTaskbar_Y + Ceil((Y - ScreenWoTaskbar_Y - 1)/ScreenWoTaskbar_H * gridNo - 1)*ScreenWoTaskbar_H / gridNo, ScreenWoTaskbar_W / gridNo, ScreenWoTaskbar_H / gridNo 
+						WinMove, ahk_id %wm_target_id%,, , ScreenWoTaskbar_Y + Ceil((Y - ScreenWoTaskbar_Y - 1)/ScreenWoTaskbar_H * gridNo - 1)*ScreenWoTaskbar_H / gridNo, ScreenWoTaskbar_W / gridNo, ScreenWoTaskbar_H / gridNo 
 						KeyWait, Up, % "T" SETTING_CONSTANT_WINMOV_STEP_REP
 					}
 					if (is_down = "D") {
-						WinMove, A,, , ScreenWoTaskbar_Y + Ceil((Y - ScreenWoTaskbar_Y + 1)/ScreenWoTaskbar_H * gridNo)*ScreenWoTaskbar_H / gridNo, ScreenWoTaskbar_W / gridNo, ScreenWoTaskbar_H / gridNo 
+						WinMove, ahk_id %wm_target_id%,, , ScreenWoTaskbar_Y + Ceil((Y - ScreenWoTaskbar_Y + 1)/ScreenWoTaskbar_H * gridNo)*ScreenWoTaskbar_H / gridNo, ScreenWoTaskbar_W / gridNo, ScreenWoTaskbar_H / gridNo 
 						KeyWait, Down, % "T" SETTING_CONSTANT_WINMOV_STEP_REP
 					}
 					if (is_left = "D") {
-						WinMove, A,, ScreenWoTaskbar_X + Ceil((X - ScreenWoTaskbar_X - 1)/ScreenWoTaskbar_W * gridNo - 1)*ScreenWoTaskbar_W / gridNo, , ScreenWoTaskbar_W / gridNo, ScreenWoTaskbar_H / gridNo
+						WinMove, ahk_id %wm_target_id%,, ScreenWoTaskbar_X + Ceil((X - ScreenWoTaskbar_X - 1)/ScreenWoTaskbar_W * gridNo - 1)*ScreenWoTaskbar_W / gridNo, , ScreenWoTaskbar_W / gridNo, ScreenWoTaskbar_H / gridNo
 						KeyWait, Left, % "T" SETTING_CONSTANT_WINMOV_STEP_REP
 					}
 					if (is_right = "D") {
-						WinMove, A,, ScreenWoTaskbar_X + Ceil((X - ScreenWoTaskbar_X + 1)/ScreenWoTaskbar_W * gridNo)*ScreenWoTaskbar_W / gridNo, , ScreenWoTaskbar_W / gridNo, ScreenWoTaskbar_H / gridNo
+						WinMove, ahk_id %wm_target_id%,, ScreenWoTaskbar_X + Ceil((X - ScreenWoTaskbar_X + 1)/ScreenWoTaskbar_W * gridNo)*ScreenWoTaskbar_W / gridNo, , ScreenWoTaskbar_W / gridNo, ScreenWoTaskbar_H / gridNo
 						KeyWait, Right, % "T" SETTING_CONSTANT_WINMOV_STEP_REP
 					}
 				} else {
@@ -2265,6 +2300,9 @@ CapsLock & Right::
 			started_windowMove := 0
 			Break
 		}
+		if (is_up != "D" and is_down != "D" and is_left != "D" and is_right != "D") {
+			Sleep, 10 	; idle poll; the arrow-held paths pace themselves via KeyWait
+		}
 	}
 return
 
@@ -2273,9 +2311,8 @@ return
 	Tooltip, % " " GetKeyState("Down", "P") " " GetKeyState("up", "P") " " GetKeyState("right", "P") " " GetKeyState("left", "P") " " GetKeyState("CapsLock", "P")	
 Return
 
-~Right & CapsLock::
-	;tooltip, asdf
-Return
+; (removed leftover debug combo `~Right & CapsLock::` — while the Right arrow was held it outranked
+;  the plain CapsLock:: hotkey, making CapsLock completely dead: no toggle, no timestamp)
 
 ;; RESIZING WINDOW
 
@@ -2285,9 +2322,15 @@ Return
 #!Left::
 #!Down::
 #!Up::
-	DllCall("SystemParametersInfo", UInt, 0x0001, UInt, 0, UIntP, initial_beep_setting, UInt,0) 
-	DllCall("SystemParametersInfo", UInt, 0x0002, UInt, 0, UInt,0, UInt,0) 	; SPI_SETBEEP : 0x0002
+	beep_resize_depth += 1 	; the four arrow hotkeys share this body; only the outermost thread saves/restores the beep setting
+	if (beep_resize_depth = 1) {
+		DllCall("SystemParametersInfo", UInt, 0x0001, UInt, 0, UIntP, beep_resize, UInt,0)
+		DllCall("SystemParametersInfo", UInt, 0x0002, UInt, 0, UInt,0, UInt,0) 	; SPI_SETBEEP : 0x0002
+	}
 	loop {
+		WinGet, wr_target_id, ID, A 	; snapshot the active window once per iteration (same reason as the CapsLock+Arrow loop)
+		if (wr_target_id = "")
+			wr_target_id := 0 	; "ahk_id 0" matches nothing -> the resizes below silently do nothing
 		GetKeyState, is_up, Up, P
 		GetKeyState, is_down, Down, P
 		GetKeyState, is_left, Left, P
@@ -2296,59 +2339,59 @@ Return
 		GetKeyState, is_x, x, P
 
 		if (is_right = "D") {
-			WinGetPos, X,Y,W,H,A
+			WinGetPos, X,Y,W,H, ahk_id %wr_target_id%
 			if (is_x = "D") {
-				WinMove,A,,X+20,,W-20,
+				WinMove, ahk_id %wr_target_id%,,X+20,,W-20,
 				KeyWait, Right, % "T" SETTING_CONSTANT_WINMOV_PX_S_RepSec
 			} else {
-				WinMove,A,,,,W+20,
-				WinGetPos, X,,W2,,A
+				WinMove, ahk_id %wr_target_id%,,,,W+20,
+				WinGetPos, X,,W2,, ahk_id %wr_target_id%
 				if (W = W2) {
-					WinMove,A,, X+20,,,
+					WinMove, ahk_id %wr_target_id%,, X+20,,,
 				}
 				KeyWait, Right, % "T" SETTING_CONSTANT_WINMOV_PX_S_RepSec
 			}
 		}
 		if (is_left = "D") {
-			WinGetPos, X,Y,W,H,A
+			WinGetPos, X,Y,W,H, ahk_id %wr_target_id%
 			if (is_x = "D") {
-				WinMove,A,,,,W-20,
-				WinGetPos, X,,W2,,A
+				WinMove, ahk_id %wr_target_id%,,,,W-20,
+				WinGetPos, X,,W2,, ahk_id %wr_target_id%
 				if (W = W2) {
-					WinMove,A,, X-20,,,
+					WinMove, ahk_id %wr_target_id%,, X-20,,,
 				}
 				KeyWait, Left, % "T" SETTING_CONSTANT_WINMOV_PX_S_RepSec
 			} else {
 
-				WinMove,A,,X-20,,W+20,
+				WinMove, ahk_id %wr_target_id%,,X-20,,W+20,
 				KeyWait, Left, % "T" SETTING_CONSTANT_WINMOV_PX_S_RepSec
 			}
 		}
 		if (is_down = "D") {
-			WinGetPos, X,Y,W,H,A
+			WinGetPos, X,Y,W,H, ahk_id %wr_target_id%
 			if (is_x = "D") {
-				WinMove,A,,,Y+20,,H-20
+				WinMove, ahk_id %wr_target_id%,,,Y+20,,H-20
 				KeyWait, Down, % "T" SETTING_CONSTANT_WINMOV_PX_S_RepSec
 			} else {
-				WinMove,A,,,,,H+20
-				WinGetPos, ,Y,,H2,A
+				WinMove, ahk_id %wr_target_id%,,,,,H+20
+				WinGetPos, ,Y,,H2, ahk_id %wr_target_id%
 				if (H = H2) {
-					WinMove,A,,,Y+20,,
+					WinMove, ahk_id %wr_target_id%,,,Y+20,,
 				}
 				KeyWait, Down, % "T" SETTING_CONSTANT_WINMOV_PX_S_RepSec
 			}
 		}
 		if (is_up = "D") {
-			WinGetPos, X,Y,W,H,A
+			WinGetPos, X,Y,W,H, ahk_id %wr_target_id%
 			if (is_x = "D") {
-				WinMove,A,,,,,H-20
-				WinGetPos, ,Y,,H2,A
+				WinMove, ahk_id %wr_target_id%,,,,,H-20
+				WinGetPos, ,Y,,H2, ahk_id %wr_target_id%
 				if (H = H2) {
-					WinMove,A,,,Y-20,,
+					WinMove, ahk_id %wr_target_id%,,,Y-20,,
 				}
 				KeyWait, Up, % "T" SETTING_CONSTANT_WINMOV_PX_S_RepSec
 			} else {
-				WinMove,A,,,Y-20,,H+20
+				WinMove, ahk_id %wr_target_id%,,,Y-20,,H+20
 				KeyWait, Up, % "T" SETTING_CONSTANT_WINMOV_PX_S_RepSec
 			}
 		}
@@ -2356,8 +2399,15 @@ Return
 		if (!GetKeyState("Alt", "P")) {
 			Break
 		}
+		if (is_up != "D" and is_down != "D" and is_left != "D" and is_right != "D") {
+			Sleep, 10 	; idle poll; the arrow-held paths pace themselves via KeyWait
+		}
 	}
-	DllCall("SystemParametersInfo", UInt, 0x0002, UInt, initial_beep_setting, UInt,0, UInt,0) 	; SPI_SETBEEP : 0x0002
+	beep_resize_depth -= 1
+	if (beep_resize_depth <= 0) {
+		beep_resize_depth := 0
+		DllCall("SystemParametersInfo", UInt, 0x0002, UInt, beep_resize, UInt,0, UInt,0) 	; SPI_SETBEEP : 0x0002
+	}
 return
 
 	
@@ -2423,8 +2473,8 @@ return
 	}
 	min_i := x1
 	loop, %i% {
-		if (x%i% < min_i) {
-			min_i := x%i%
+		if (x%A_Index% < min_i) {
+			min_i := x%A_Index%
 		}
 	}
 	if (i > 0) {
@@ -2450,8 +2500,8 @@ return
 	}
 	max_i := x1
 	loop, %i% {
-		if (x%i% > max_i) {
-			max_i := x%i%
+		if (x%A_Index% > max_i) {
+			max_i := x%A_Index%
 		}
 	}
 	if (i > 0) {
@@ -2477,8 +2527,8 @@ return
 	}
 	max_i := x1
 	loop, %i% {
-		if (x%i% > max_i) {
-			max_i := x%i%
+		if (x%A_Index% > max_i) {
+			max_i := x%A_Index%
 		}
 	}
 	if (i > 0) {
@@ -2504,8 +2554,8 @@ return
 	}
 	min_i := x1
 	loop, %i% {
-		if (x%i% < min_i) {
-			min_i := x%i%
+		if (x%A_Index% < min_i) {
+			min_i := x%A_Index%
 		}
 	}
 	if (i > 0) {
@@ -2568,6 +2618,7 @@ CapsLock & LButton::
 	; which provoke "half top" or "half bottom" or a quater and drag it to the center, it doesn't form the restored form, but "half top", "half bottom" or a quater.
 	; But "half left/right" are fine. 
 	Loop {
+		Sleep, 10 	; ~100 updates/s is plenty for a drag; stops busy-waiting (CPU)
 		GetKeyState, LButtonState, LButton, P
 		if LButtonState = U  ; Button has been released, so drag is complete.
 		{
@@ -2781,6 +2832,7 @@ CapsLock & RButton::
 
 
 	Loop {
+		Sleep, 10 	; ~100 updates/s is plenty for a resize drag; stops busy-waiting (CPU)
 		GetKeyState, RButtonState, RButton, P
 		if RButtonState = U  ; Button has been released, so drag is complete.
 			break
@@ -2850,8 +2902,8 @@ SystemCursor(x_CursorIndicator, OnOff=1)   ; INIT = "I","Init"; OFF = 0,"Off"; T
 
 ; op-./;:
 CapsLock & o::
-	DllCall("SystemParametersInfo", UInt, 0x0001, UInt, 0, UIntP, initial_beep_setting, UInt,0) 
-	is_capslock_initial := 1 - getkeystate("capslock", "T")
+	DllCall("SystemParametersInfo", UInt, 0x0001, UInt, 0, UIntP, beep_dateinput, UInt,0)
+	is_capslock_initial := getkeystate("capslock", "T") 	; (the old "1 -" inverted the state, so every use flipped CapsLock)
 	Hotkey, % A_ThisHotkey, , Off 	; Disable the hotkey in order to recive the keystroke of "O" or the trigger key letter.
 	thisHotkey_timeInputMode := A_ThisHotkey
 	DllCall("SystemParametersInfo", UInt, 0x0002, UInt, 0, UInt,0, UInt,0) 	; SPI_SETBEEP : 0x0002
@@ -2951,7 +3003,7 @@ CapsLock & o::
 		;Send, % date_output 	; When it's 2016#07#16, it works as if an user really pressed Windows key + 0, Windows + 1
 		SendRaw, % date_output 	; When it's 2016#07#16, it interpret literally so that it doesn't translate # to Windows key.
 	}
-	DllCall("SystemParametersInfo", UInt, 0x0002, UInt, initial_beep_setting, UInt,0, UInt,0) 	; SPI_SETBEEP : 0x0002
+	DllCall("SystemParametersInfo", UInt, 0x0002, UInt, beep_dateinput, UInt,0, UInt,0) 	; SPI_SETBEEP : 0x0002
 	if (is_capslock_initial) {
 		SetCapsLockState, on
 	} else {
@@ -3039,7 +3091,7 @@ Return
 ; If + is pressed twice quickly, Constrain Mouse mode is evoked.
 CapsLock & +::
 	if (!FLAG_COOR_CONSTRAINED_MOUSE) {
-		is_capslock_initial_mouseCoor := 1 - getkeystate("capslock", "T") 	; To store the initial toggle state of CapsLock
+		is_capslock_initial_mouseCoor := getkeystate("capslock", "T") 	; To store the initial toggle state of CapsLock (the old "1 -" inverted it)
 		FLAG_COOR_CONSTRAINED_MOUSE := 1
 		WinGet, activeWin_ID, ID, A
 		WinActivate, ahk_class Shell_TrayWnd 	; By activating the taskbar, it can prevent any keystrokes from pass to Windows.
@@ -3116,7 +3168,7 @@ Return
 ;; MOUSE MODE
 CapsLock & M::
 	FLAG_MOUSECONTROL := 1 	; Critical, on  or  thread, priority, 10000 can be used intead. But SetTimer doesn't work in this thread too.
-	is_capslock_initial := 1 - getkeystate("capslock", "T")
+	is_capslock_initial := getkeystate("capslock", "T") 	; (the old "1 -" inverted the state, so every use flipped CapsLock)
 
 	; block some other hotkeys
 	; to prevent the 2nd keys of this Mouse Mode from causing problems with other hotkeys
@@ -3218,6 +3270,7 @@ CapsLock & M::
 	
 			vtext := {}
 			Loop, {
+				Sleep, 10 	; poll ~100x/s instead of busy-waiting (CPU)
 				index := Mod(A_Index, 2)
 				vtext[index] := ""
 				MouseGetPos, mousex, mousey
@@ -3535,6 +3588,7 @@ CapsLock & 0::
 	} else if (GetKeyState("Control", "P") and GetKeyState("Shift", "P")) { 	; To show all mouse bookmark positions
 		if (mousePosBookmark[mouseBookmark_no].length() >= 1) {
 			Loop, % mousePosBookmark[mouseBookmark_no].length() {
+				Gui, mousePosBookmark%A_Index%: Destroy 	; a quick re-show would otherwise orphan the previous square permanently
 				Gui, mousePosBookmark%A_Index%: New
 				Gui, mousePosBookmark%A_Index%: +Owner +Disabled -SysMenu -Caption +AlwaysOnTop
 				Gui, mousePosBookmark%A_Index%: Color, EEAA99
@@ -3878,7 +3932,8 @@ CapsLock & WheelDown::
 			}
 		}
 	}
-	if ((AltTab_window_list_findID(WinExist("A")).Class = "XLMAIN") and GetKeyState("Shift")) { 
+	WinGetClass, wheelScroll_activeClass, A 	; one cheap query instead of enumerating every window (AltTab_window_list) per wheel tick
+	if ((wheelScroll_activeClass = "XLMAIN") and GetKeyState("Shift")) {
 		wheelScroll_speedUp_Excel := wheelScroll_speedUp + wheelScroll_speedUp_default
 		ComObjActive("Excel.Application").ActiveWindow.SmallScroll(0,0, wheelScroll_speedUp_Excel)  ; Scroll right.   (credit: Learning one  https://autohotkey.com/board/topic/35292-horizontal-scroll-in-excel-2007/)
 		if (WheelScroll_fast_lv1_started = 1) {
@@ -3904,7 +3959,8 @@ CapsLock & WheelUp::
 			}
 		}
 	}
-	if ((AltTab_window_list_findID(WinExist("A")).Class = "XLMAIN") and GetKeyState("Shift")) { 
+	WinGetClass, wheelScroll_activeClass, A 	; one cheap query instead of enumerating every window (AltTab_window_list) per wheel tick
+	if ((wheelScroll_activeClass = "XLMAIN") and GetKeyState("Shift")) {
 		wheelScroll_speedUp_Excel := wheelScroll_speedUp + wheelScroll_speedUp_default
 		ComObjActive("Excel.Application").ActiveWindow.SmallScroll(0,0,0,wheelScroll_speedUp_Excel)  ; Scroll left. (credit: Learning one  https://autohotkey.com/board/topic/35292-horizontal-scroll-in-excel-2007/)
 		if (WheelScroll_fast_lv1_started = 1) {
@@ -3940,7 +3996,8 @@ Return
 			wheelScroll_speedUp_Excel := wheelScroll_speedUp = 0 ? wheelScroll_speedUp_default : wheelScroll_speedUp
 			wheelScroll_speedUp := wheelScroll_speedUp - wheelScroll_speedUp_default
 		}
-		ComObjActive((AltTab_window_list_findID(WinExist("A")).Class = "XLMAIN"? "Excel":"Word") ".Application").ActiveWindow.SmallScroll(0,0,0,wheelScroll_speedUp_Excel)  ; Scroll left
+		WinGetClass, wheelScroll_activeClass, A 	; one cheap query instead of enumerating every window per wheel tick
+		ComObjActive((wheelScroll_activeClass = "XLMAIN"? "Excel":"Word") ".Application").ActiveWindow.SmallScroll(0,0,0,wheelScroll_speedUp_Excel)  ; Scroll left
 		if (wheelScroll_speedUp_Excel/wheelScroll_speedUp_default < 2) {
 			WheelScroll_fast_lv1_started := 0
 		} else if (WheelScroll_fast_lv1_started = 1) {
@@ -3963,7 +4020,8 @@ Return
 			wheelScroll_speedUp_Excel := wheelScroll_speedUp = 0 ? wheelScroll_speedUp_default : wheelScroll_speedUp
 			wheelScroll_speedUp := wheelScroll_speedUp - wheelScroll_speedUp_default
 		}
-		ComObjActive((AltTab_window_list_findID(WinExist("A")).Class = "XLMAIN"? "Excel":"Word") ".Application").ActiveWindow.SmallScroll(0,0,wheelScroll_speedUp_Excel)  ; Scroll right. 
+		WinGetClass, wheelScroll_activeClass, A 	; one cheap query instead of enumerating every window per wheel tick
+		ComObjActive((wheelScroll_activeClass = "XLMAIN"? "Excel":"Word") ".Application").ActiveWindow.SmallScroll(0,0,wheelScroll_speedUp_Excel)  ; Scroll right.
 		if (wheelScroll_speedUp_Excel/wheelScroll_speedUp_default < 2) {
 			WheelScroll_fast_lv1_started := 0
 		} else if (WheelScroll_fast_lv1_started = 1) {
@@ -4034,9 +4092,13 @@ WheelScroll_fast_first:
 
 	ToolTip, % "Wheel speed up: level " round(wheelScroll_speedUp/wheelScroll_speedUp_default) text_tooltip
 	SetTimer, RemoveToolTip, % SETTING_CONSTANT_TOOLTIPDUR_S
-	KeyWait, CapsLock
-	KeyWait, Shift
-	SetCapsLockState, Off 	; This is the only way for user to anticipate the result of the value of CapsLock. Or we need to use Alt or Ctrl. Or we need to use Ctrl to speed up while holding CapsLock.
+	if (InStr(A_ThisHotkey, "CapsLock") or GetKeyState("CapsLock", "P")) { 	; CapsLock & Wheel family
+		KeyWait, CapsLock
+		KeyWait, Shift
+		SetCapsLockState, Off 	; This is the only way for user to anticipate the result of the value of CapsLock. Or we need to use Alt or Ctrl. Or we need to use Ctrl to speed up while holding CapsLock.
+	} else { 	; Shift-only +Wheel family (Excel/Word): CapsLock was never touched, so leave its toggle state alone
+		KeyWait, Shift
+	}
 	;Gosub, ResetTimeStampModifiers
 	WheelScroll_fast_lv1_started := 0
 Return
@@ -4052,10 +4114,17 @@ Return
 
 ~Alt::
 ~Control::
-Shift::
+~Shift:: 	; ~ added: without it the hook swallowed the physical Shift and re-sent a synthetic tap
 ~LWin::
 ~RWin::
 CapsLock::
+	; Ignore keyboard auto-repeat (typematic) re-fires while a key is held.
+	; A hook hotkey fires again for every auto-repeated key-down (~33 ms apart), which floods the
+	; timeStamp_* ring (20 slots in ~1.2 s of holding Ctrl) and inflates every
+	; "press N times to speed up" feature to maximum. 80 ms rejects typematic repeats
+	; but passes deliberate double-taps.
+	if (A_ThisHotkey = A_PriorHotkey && A_TimeSincePriorHotkey < 80)
+		Return
 	hotkeyPart := HotkyeAnalysis()
 	vHotkey := hotkeyPart[1][2]
 	if ((hotkeyPart[1][2] = "LWin") or (hotkeyPart[1][2] = "RWin"))
@@ -4079,9 +4148,8 @@ CapsLock::
 		} else {
 			SetCapsLockState, on
 		}
-	} else if (vHotkey = "Shift") {
-		Send, {Shift}
 	}
+	; (the old `Send, {Shift}` compensation is gone: with ~Shift:: the physical Shift passes through natively)
 return
 
 
@@ -4187,7 +4255,7 @@ AltTab_window_list() {
     		continue
 		}
 		; Kim Dongryeong added (Xbox, Movies & TV, Photos are always there and can't recognize if it's really on the desktop or kind of hidden by Style or ExStyle or positions, etc. So for now, simply exclude them.)
-		if ( ((wid_Title = "Xbox") and (("Windows.UI.Core.CoreWindow") or ("ApplicationFrameWindow"))) or ((wid_Title = "Movies & TV") and (("Windows.UI.Core.CoreWindow") or ("ApplicationFrameWindow"))) or ((wid_Title = "Photos") and (("Windows.UI.Core.CoreWindow") or ("ApplicationFrameWindow")))) {
+		if ( ((wid_Title = "Xbox") or (wid_Title = "Movies & TV") or (wid_Title = "Photos")) and ((Win_Class = "Windows.UI.Core.CoreWindow") or (Win_Class = "ApplicationFrameWindow")) ) { 	; the class was not actually compared before, so ANY window with these titles was excluded
 			continue
 		}
 
@@ -4253,8 +4321,16 @@ AltTab_List_SameType(vID := "", vProcessName := "") {
 	atList := AltTab_window_list()
 	
 	if (StrLen(vID) > 0) {
-		vProcessName := AltTab_window_list_findID(vID).ProcessName
-		vClass := AltTab_window_list_findID(vID).Class
+		; look up in the already-built atList instead of enumerating every window twice more (AltTab_window_list_findID rebuilds the whole list per call)
+		vProcessName := ""
+		vClass := ""
+		Loop, % atList.length() {
+			if (vID = atList[A_Index].id) {
+				vProcessName := atList[A_Index].ProcessName
+				vClass := atList[A_Index].Class
+				Break
+			}
+		}
 		Loop, % atList.length() {
 			if ((vProcessName = atList[A_Index].ProcessName) and (vClass = atList[A_Index].Class)) {
 				aObject := atList[A_Index].Clone()
@@ -4279,7 +4355,8 @@ Print_Windows_ListView(windowsList, GuiName := "Tanti Auguri for last year", LVt
 	if (GuiName = "Tanti Auguri for last year") {
 		GuiName := A_TickCount 	; to make it possible to open another new GUI even without any GUI name variable passed
 	}
-	Gui, aGui%GuiName%: New
+	; (a redundant `Gui, aGui%GuiName%: New` was here — it orphaned one hidden window on every call,
+	;  because the second New below takes over the name without destroying the first window)
 	column := "#|i|ID|PID|Style|ExStyle|Parent|x|y|w|h|area|ProcessName|class|Title|ProcessPath"
 	if (StrLen(vKey1))
 		column .= "|" vKey1
@@ -4602,10 +4679,10 @@ Show_Windows(vProcessName, vID, girdMode) {
 			WinRestore, % "ahk_id " AltTabListSameType[A_Index].ID 	; this is the problem.
 
 			WinGetPos, temp_x, temp_y, temp_w, temp_h, % "ahk_id " AltTabListSameType[A_Index].ID
-			;AltTabListSameType[A_Index].x := temp_x  
-			;AltTabListSameType[A_Index].y := temp_y
-			;AltTabListSameType[A_Index].width := temp_w
-			;AltTabListSameType[A_Index].height := temp_h  
+			AltTabListSameType[A_Index].x := temp_x  
+			AltTabListSameType[A_Index].y := temp_y
+			AltTabListSameType[A_Index].width := temp_w
+			AltTabListSameType[A_Index].height := temp_h  
 			AltTabListSameType.all_w += temp_w
 			AltTabListSameType.all_h += temp_h
 			if (AltTabListSameType.max_w < temp_w) {
@@ -4681,27 +4758,21 @@ Show_Windows(vProcessName, vID, girdMode) {
 ;				AltTabListSameType_sorted_h_norm_desc[A_Index].ID := AltTabListSameType[A_Index].ID  		; preparation for sorting - assigning ID
 			}
 
-	Print_Windows_ListView(AltTabListSameType, , "AltTabListSameType original")
-	ttt := AltTabListSameType.Clone()
-	OOO := AltTabListSameType.Clone()
-	ttt[1].width := 888
-	Print_Windows_ListView(ttt, , "ttt")
-	Print_Windows_ListView(OOO, , "OOO")
 
 
 
 			;AltTabListSameType_sorted_w_norm_desc := {}
 			;AltTabListSameType_sorted_h_norm_desc := {}
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; the problem
+			; Clone() is shallow: both sorted lists share the element objects with AltTabListSameType.
+			; Sort_Object only reorders references, so sharing is fine as long as elements are not mutated.
+			; Reads below use .width_norm/.height_norm (set above) instead of mutating .width in place,
+			; which corrupted the shared objects (this was "the problem").
 			AltTabListSameType_sorted_w_norm_desc := AltTabListSameType.Clone()
-			AltTabListSameType_sorted_h_norm_desc := AltTabListSameType_sorted_w_norm_desc.Clone()
-			;Sort_Object(AltTabListSameType_sorted_w_norm_desc, "width_norm", 0)
-			;Sort_Object(AltTabListSameType_sorted_h_norm_desc, "height_norm", 0)
+			AltTabListSameType_sorted_h_norm_desc := AltTabListSameType.Clone()
+			Sort_Object(AltTabListSameType_sorted_w_norm_desc, "width_norm", 0)
+			Sort_Object(AltTabListSameType_sorted_h_norm_desc, "height_norm", 0)
 			
-			AltTabListSameType_sorted_w_norm_desc[1].width := 99999			
-			Print_Windows_ListView(AltTabListSameType_sorted_w_norm_desc, , "AltTabListSameType_sorted_w_norm_desc", "width_norm")
-			Print_Windows_ListView(AltTabListSameType_sorted_h_norm_desc, , "AltTabListSameType_sorted_h_norm_desc", "width_norm")
-			Print_Windows_ListView(AltTabListSameType, , "AltTabListSameType", "width_norm")
 
 
 			;AltTabListSameType_sorted_h_norm_desc := Sort_Object(AltTabListSameType, "height_norm", 0)
@@ -4718,15 +4789,12 @@ Show_Windows(vProcessName, vID, girdMode) {
 ;				AltTabListSameType_sorted_h_norm_desc[A_Index].y := temp_y
 ;				AltTabListSameType_sorted_h_norm_desc[A_Index].width := temp_w*monitor_%monitor_no_prm%_workarea_ratio 	
 ;				AltTabListSameType_sorted_h_norm_desc[A_Index].height := temp_h	; Actually AltTabListSameType_sorted_h_norm_desc[A_Index].height = AltTabListSameType_sorted_h_norm_desc[A_Index].width
-				AltTabListSameType_sorted_w_norm_desc[A_Index].width := AltTabListSameType_sorted_w_norm_desc[A_Index].width * monitor_%monitor_no_prm%_workarea_ratio 	
-				AltTabListSameType_sorted_h_norm_desc[A_Index].width := AltTabListSameType_sorted_h_norm_desc[A_Index].width * monitor_%monitor_no_prm%_workarea_ratio 	
 			}
 			;;;;;;;;;;;;;;;;;;;;;;;;;; sorting is done.
 
-			msgbox, % AltTabListSameType_sorted_w_norm_desc[1].width " =< " AltTabListSameType_sorted_h_norm_desc[1].height
-			if (AltTabListSameType_sorted_w_norm_desc[1].width > AltTabListSameType_sorted_h_norm_desc[1].height) { 	; horizontal max is bigger than vertical max (in normalized values)
+			if (AltTabListSameType_sorted_w_norm_desc[1].width_norm > AltTabListSameType_sorted_h_norm_desc[1].height) { 	; horizontal max is bigger than vertical max (in normalized values)
 				FExpStack_bottomFExp := AltTabListSameType_sorted_w_norm_desc[1].ID
-				FExpStack_bottomFExp_w_norm := AltTabListSameType_sorted_w_norm_desc[1].width
+				FExpStack_bottomFExp_w_norm := AltTabListSameType_sorted_w_norm_desc[1].width_norm
 				FExpStack_bottomFExp_h_norm := AltTabListSameType_sorted_w_norm_desc[1].height
 				FExpStack_leftFExp := ""
 				FExpStack_rightFExp := ""
@@ -4734,18 +4802,18 @@ Show_Windows(vProcessName, vID, girdMode) {
 				sum_theOthers_w_norm := 0 	; sum of all the widths except the longest one.
 				Loop, % AltTabListSameType.length() - 1 {
 					nextIndex := A_Index + 1
-					sum_theOthers_w_norm += AltTabListSameType_sorted_w_norm_desc[nextIndex]
+					sum_theOthers_w_norm += AltTabListSameType_sorted_w_norm_desc[nextIndex].width_norm 	; (was adding the object itself, not its width)
 				}
 				over_w_norm := sum_theOthers_w_norm - monitor_%monitor_no_prm%_workarea_width * monitor_%monitor_no_prm%_workarea_ratio > 0 ? sum_theOthers_w_norm - monitor_%monitor_no_prm%_workarea_width * monitor_%monitor_no_prm%_workarea_ratio : 0
-				horizontalLength_norm_net := sum_theOthers_w_norm - over_w_norm > AltTabListSameType_sorted_w_norm_desc[1].width ? sum_theOthers_w_norm - over_w_norm : AltTabListSameType_sorted_w_norm_desc[1].width
-				horizontalLength_norm_net := horizontalLength_norm_net < monitor_%monitor_no_prm%_workarea_width ? horizontalLength_norm_net : monitor_%monitor_no_prm%_workarea_width 	; in case AltTabListSameType_sorted_w_norm_desc[1].width > monitor_%monitor_no_prm%_workarea_width
+				horizontalLength_norm_net := sum_theOthers_w_norm - over_w_norm > AltTabListSameType_sorted_w_norm_desc[1].width_norm ? sum_theOthers_w_norm - over_w_norm : AltTabListSameType_sorted_w_norm_desc[1].width_norm
+				horizontalLength_norm_net := horizontalLength_norm_net < monitor_%monitor_no_prm%_workarea_width ? horizontalLength_norm_net : monitor_%monitor_no_prm%_workarea_width 	; in case AltTabListSameType_sorted_w_norm_desc[1].width_norm > monitor_%monitor_no_prm%_workarea_width
 
 				if (AltTabListSameType_sorted_w_norm_desc[1].ID = AltTabListSameType_sorted_h_norm_desc[1].ID) { 	; That window has the longest width and the longest height.
 					FExpStack_rightFExp := AltTabListSameType_sorted_h_norm_desc[2].ID
-					FExpStack_rightFExp_w_norm := AltTabListSameType_sorted_h_norm_desc[2].width
+					FExpStack_rightFExp_w_norm := AltTabListSameType_sorted_h_norm_desc[2].width_norm
 					FExpStack_rightFExp_h_norm := AltTabListSameType_sorted_h_norm_desc[2].height
 					FExpStack_leftFExp := AltTabListSameType_sorted_h_norm_desc[3].ID
-					FExpStack_leftFExp_w_norm := AltTabListSameType_sorted_h_norm_desc[3].width
+					FExpStack_leftFExp_w_norm := AltTabListSameType_sorted_h_norm_desc[3].width_norm
 					FExpStack_leftFExp_h_norm := AltTabListSameType_sorted_h_norm_desc[3].height
 
 					verticalLength := AltTabListSameType_sorted_w_norm_desc[1].height + AltTabListSameType_sorted_h_norm_desc[2].height
@@ -4755,7 +4823,7 @@ Show_Windows(vProcessName, vID, girdMode) {
 ;;;;;===================================00000000000000000000000000000
 				} else { 	; That window has the longest width but not the longest height.
 					FExpStack_rightFExp := AltTabListSameType_sorted_h_norm_desc[1].ID
-					FExpStack_rightFExp_w_norm := AltTabListSameType_sorted_h_norm_desc[1].width
+					FExpStack_rightFExp_w_norm := AltTabListSameType_sorted_h_norm_desc[1].width_norm
 					FExpStack_rightFExp_h_norm := AltTabListSameType_sorted_h_norm_desc[1].height
 					; to find the remaining ID which should be at the upper left position.
 					Loop, % AltTabListSameType.length() {
@@ -4815,14 +4883,14 @@ Show_Windows(vProcessName, vID, girdMode) {
 			} else { 	; vertical max is bigger than horizontal max
 				FExpStack_rightFExp := AltTabListSameType_sorted_h_norm_desc[1].ID
 				FExpStack_rightFExp_h_norm := AltTabListSameType_sorted_h_norm_desc[1].height
-				FExpStack_rightFExp_w_norm := AltTabListSameType_sorted_h_norm_desc[1].width
+				FExpStack_rightFExp_w_norm := AltTabListSameType_sorted_h_norm_desc[1].width_norm
 				FExpStack_topFExp := ""
 				FExpStack_bottomFExp := ""
 
 				sum_theOthers_h := 0 	; sum of all the widths except the longest one.
 				Loop, % AltTabListSameType.length() - 1 {
 					nextIndex := A_Index + 1
-					sum_theOthers_h += AltTabListSameType_sorted_h_norm_desc[nextIndex]
+					sum_theOthers_h += AltTabListSameType_sorted_h_norm_desc[nextIndex].height 	; (was adding the object itself, not its height)
 				}
 				over_h := sum_theOthers_h - monitor_%monitor_no_prm%_workarea_height > 0 ? sum_theOthers_h - monitor_%monitor_no_prm%_workarea_height : 0
 				verticalLength_net := sum_theOthers_h - over_h > AltTabListSameType_sorted_h_norm_desc[1].height ? sum_theOthers_h - over_h : AltTabListSameType_sorted_h_norm_desc[1].height
@@ -4831,19 +4899,19 @@ Show_Windows(vProcessName, vID, girdMode) {
 				if (AltTabListSameType_sorted_h_norm_desc[1].ID = AltTabListSameType_sorted_w_norm_desc[1].ID) { 	; That window has the longest width and the longest height.
 					FExpStack_bottomFExp := AltTabListSameType_sorted_w_norm_desc[2].ID
 					FExpStack_bottomFExp_h_norm := AltTabListSameType_sorted_w_norm_desc[2].height
-					FExpStack_bottomFExp_w_norm := AltTabListSameType_sorted_w_norm_desc[2].width
+					FExpStack_bottomFExp_w_norm := AltTabListSameType_sorted_w_norm_desc[2].width_norm
 					FExpStack_topFExp := AltTabListSameType_sorted_w_norm_desc[3].ID
 					FExpStack_topFExp_h_norm := AltTabListSameType_sorted_w_norm_desc[3].height
-					FExpStack_topFExp_w_norm := AltTabListSameType_sorted_w_norm_desc[3].width
+					FExpStack_topFExp_w_norm := AltTabListSameType_sorted_w_norm_desc[3].width_norm
 
-					horizontalLength_norm := AltTabListSameType_sorted_h_norm_desc[1].width + AltTabListSameType_sorted_w_norm_desc[2].width
+					horizontalLength_norm := AltTabListSameType_sorted_h_norm_desc[1].width_norm + AltTabListSameType_sorted_w_norm_desc[2].width_norm
 					over_w_norm := horizontalLength_norm - monitor_%monitor_no_prm%_workarea_width * monitor_%monitor_no_prm%_workarea_ratio > 0 ? horizontalLength_norm - monitor_%monitor_no_prm%_workarea_width * monitor_%monitor_no_prm%_workarea_ratio : 0
 					horizontalLength_norm_net := horizontalLength_norm - over_w_norm
 ;;;;;===================================00000000000000000000000000000
 				} else { 	; That window has the longest width but not the longest height.
 					FExpStack_bottomFExp := AltTabListSameType_sorted_w_norm_desc[1].ID
 					FExpStack_bottomFExp_h_norm := AltTabListSameType_sorted_w_norm_desc[1].height
-					FExpStack_bottomFExp_w_norm := AltTabListSameType_sorted_w_norm_desc[1].width
+					FExpStack_bottomFExp_w_norm := AltTabListSameType_sorted_w_norm_desc[1].width_norm
 					; to find the remaining ID which should be at the upper left position.
 					Loop, % AltTabListSameType.length() {
 						if ((AltTabListSameType[A_Index].ID != FExpStack_bottomFExp) and (AltTabListSameType[A_Index].ID != FExpStack_rightFExp)) {
@@ -4854,7 +4922,7 @@ Show_Windows(vProcessName, vID, girdMode) {
 						}
 					}
 
-					horizontalLength_norm := AltTabListSameType_sorted_h_norm_desc[1].width + AltTabListSameType_sorted_w_norm_desc[1].width
+					horizontalLength_norm := AltTabListSameType_sorted_h_norm_desc[1].width_norm + AltTabListSameType_sorted_w_norm_desc[1].width_norm
 					over_w_norm := horizontalLength_norm - monitor_%monitor_no_prm%_workarea_width * monitor_%monitor_no_prm%_workarea_ratio > 0 ? horizontalLength_norm - monitor_%monitor_no_prm%_workarea_width * monitor_%monitor_no_prm%_workarea_ratio : 0
 					horizontalLength_norm_net := horizontalLength_norm - over_w_norm
 
@@ -4883,7 +4951,7 @@ Show_Windows(vProcessName, vID, girdMode) {
 					spreadFExp_right := spreadFExp_left + horizontalLength_norm_net / monitor_%monitor_no_prm%_workarea_ratio
 
 					WinMove, % "ahk_id " FExpStack_topFExp, , spreadFExp_right - (FExpStack_rightFExp_w_norm + FExpStack_topFExp_w_norm) / monitor_%monitor_no_prm%_workarea_ratio, spreadFExp_bottom - (FExpStack_bottomFExp_h_norm + FExpStack_topFExp_h_norm)
-					WinMove, % "ahk_id " FExpStack_rightFExp, , spreadFExp_right - FExpStack_rightFExp_w_norm / monitor_%monitor_no_prm%_workarea_ratio, spreadFExp_left
+					WinMove, % "ahk_id " FExpStack_rightFExp, , spreadFExp_right - FExpStack_rightFExp_w_norm / monitor_%monitor_no_prm%_workarea_ratio, spreadFExp_top 	; (was spreadFExp_left — an X value pasted into the Y slot)
 					WinMove, % "ahk_id " FExpStack_bottomFExp, , spreadFExp_left, spreadFExp_bottom - FExpStack_bottomFExp_h_norm					
 				}
 				
