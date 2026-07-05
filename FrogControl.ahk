@@ -800,170 +800,66 @@ CapsLock & Right::
 				;; ~((screen_top > window_botom) v (screen_bottom < window_top)) => the window overlaps the screen
 
 				if (is_right = "D") {
-					i := 0	; to consider the right side of a window to put a right side of a screen
-					loop, %monitor_no% {
-						if (X + W < monitor_%A_Index%_workarea_right) and (monitor_%A_Index%_workarea_top < Y + H) and (Y < monitor_%A_Index%_workarea_bottom) {		; monitors' lefts and rights are like 0 ~ 2560, -1920 ~ 0. And mouse point is like (0, 0) ~ (2559, 1439). So adding + 0.5 will make the cases finally exclusive.
-							i++
-							x%i% := monitor_%A_Index%_workarea_right
-						}
-					}
-					min_i := x1
-					loop, %i% {
-						if (x%A_Index% < min_i) {
-							min_i := x%A_Index%
-						}
-					}
-				
-					j := 0	; to consider the left side of a window to put a left side of a screen
-					loop, %monitor_no% {
-						if (X < monitor_%A_Index%_workarea_left) and (monitor_%A_Index%_workarea_top < Y + H) and (Y < monitor_%A_Index%_workarea_bottom) {		; monitors' lefts and rights are like 0 ~ 2560, -1920 ~ 0. And mouse point is like (0, 0) ~ (2559, 1439). So adding + 0.5 will make the cases finally exclusive.
-							j++
-							x%j% := monitor_%A_Index%_workarea_left
-						}
-					}
-					min_j := x1
-					loop, %j% {
-						if (x%A_Index% < min_j) {
-							min_j := x%A_Index%
-						}
-					}
-				
-					if (i > 0) and (j > 0) {
-						if (min_i - X - W < min_j - X) {
-							WinMove, ahk_id %wm_target_id%, , min_i - W
-						} else {
-							WinMove, ahk_id %wm_target_id%, , min_j
-						}
-					} else if (i > 0) {				; generally at the most right side
-						WinMove, ahk_id %wm_target_id%, , min_i - W
-					} else if (j > 0) {				; if a window is so big that its right side is over the screen. But its left side can go further right to attach an edge of a screen (it happens when using multi screens or its left is also over the screen)
-						WinMove, ahk_id %wm_target_id%, , min_j
+					edge_i := Monitor_EdgeScan("right_edge", X, Y, W, H) 	; nearest work-area right edge beyond the window's right side
+					edge_j := Monitor_EdgeScan("right_gap", X, Y, W, H) 	; nearest work-area left edge beyond the window's left side (next monitor)
+					DWM_GetBorders(wm_target_id, bL, bT, bR, bB)
+					if (edge_i != "" and edge_j != "") {
+						if (edge_i - X - W < edge_j - X)
+							WinMove, ahk_id %wm_target_id%, , % edge_i - W + bR
+						else
+							WinMove, ahk_id %wm_target_id%, , % edge_j - bL
+					} else if (edge_i != "") {
+						WinMove, ahk_id %wm_target_id%, , % edge_i - W + bR
+					} else if (edge_j != "") {
+						WinMove, ahk_id %wm_target_id%, , % edge_j - bL
 					}
 					KeyWait, Right, % "T" SETTING_CONSTANT_WINMOV_STEP_REP
 				}
 				if (is_left = "D") {
-					i := 0
-					loop, %monitor_no% {
-						if (monitor_%A_Index%_workarea_left < X) and (monitor_%A_Index%_workarea_top < Y + H) and (Y < monitor_%A_Index%_workarea_bottom) {		; monitors' lefts and rights are like 0 ~ 2560, -1920 ~ 0. And mouse point is like (0, 0) ~ (2559, 1439). So adding + 0.5 will make the cases finally exclusive.
-							i++
-							x%i% := monitor_%A_Index%_workarea_left
-						}
-					}
-					max_i := x1
-					loop, %i% {
-						if (x%A_Index% > max_i) {
-							max_i := x%A_Index%
-						}
-					}
-
-					j := 0	; to consider the right side of a window to put a right side of a screen
-					loop, %monitor_no% {
-						if (monitor_%A_Index%_workarea_right < X + W) and (monitor_%A_Index%_workarea_top < Y + H) and (Y < monitor_%A_Index%_workarea_bottom) {		; monitors' lefts and rights are like 0 ~ 2560, -1920 ~ 0. And mouse point is like (0, 0) ~ (2559, 1439). So adding + 0.5 will make the cases finally exclusive.
-							j++
-							x%j% := monitor_%A_Index%_workarea_right
-						}
-					}
-					max_j := x1
-					loop, %j% {
-						if (x%A_Index% > max_j) {
-							max_j := x%A_Index%
-						}
-					}
-
-					if (i > 0) and (j > 0) {
-						if (X - max_i < X + W - max_j) {
-							WinMove, ahk_id %wm_target_id%, , max_i
-						} else {
-							WinMove, ahk_id %wm_target_id%, , max_j - W
-						}
-					} else if (i > 0) {
-						WinMove, ahk_id %wm_target_id%, , max_i
-					} else if (j > 0) {
-						WinMove, ahk_id %wm_target_id%, , max_j - W
+					edge_i := Monitor_EdgeScan("left_edge", X, Y, W, H)
+					edge_j := Monitor_EdgeScan("left_gap", X, Y, W, H)
+					DWM_GetBorders(wm_target_id, bL, bT, bR, bB)
+					if (edge_i != "" and edge_j != "") {
+						if (X - edge_i < X + W - edge_j)
+							WinMove, ahk_id %wm_target_id%, , % edge_i - bL
+						else
+							WinMove, ahk_id %wm_target_id%, , % edge_j - W + bR
+					} else if (edge_i != "") {
+						WinMove, ahk_id %wm_target_id%, , % edge_i - bL
+					} else if (edge_j != "") {
+						WinMove, ahk_id %wm_target_id%, , % edge_j - W + bR
 					}
 					KeyWait, Left, % "T" SETTING_CONSTANT_WINMOV_STEP_REP
 				}
 				if (is_up = "D") {
-					i := 0
-					loop, %monitor_no% {
-						if (monitor_%A_Index%_workarea_left < X + W) and (X < monitor_%A_Index%_workarea_right) and (monitor_%A_Index%_workarea_top < Y) {		; monitors' lefts and rights are like 0 ~ 2560, -1920 ~ 0. And mouse point is like (0, 0) ~ (2559, 1439). So adding + 0.5 will make the cases finally exclusive.
-							i++
-							x%i% := monitor_%A_Index%_workarea_top
-						}
-					}
-					max_i := x1
-					loop, %i% {
-						if (x%A_Index% > max_i) {
-							max_i := x%A_Index%
-						}
-					}
-
-					j := 0	; to consider the bottom side of a window to put a bottom side of a screen
-					loop, %monitor_no% {
-						if (monitor_%A_Index%_workarea_left < X + W) and (X < monitor_%A_Index%_workarea_right) and (monitor_%A_Index%_workarea_bottom < Y + H) {		; monitors' lefts and rights are like 0 ~ 2560, -1920 ~ 0. And mouse point is like (0, 0) ~ (2559, 1439). So adding + 0.5 will make the cases finally exclusive.
-							j++
-							x%j% := monitor_%A_Index%_workarea_bottom
-						}
-					}
-					max_j := x1
-					loop, %j% {
-						if (x%A_Index% > max_j) {
-							max_j := x%A_Index%
-						}
-					}
-
-					if (i > 0) and (j > 0) {
-						if (Y - max_i < Y + H - max_j) {
-							WinMove, ahk_id %wm_target_id%, , , max_i
-						} else {
-							WinMove, ahk_id %wm_target_id%, , , max_j - H
-						}
-					} else if (i > 0) {
-						WinMove, ahk_id %wm_target_id%, , , max_i
-					} else if (j > 0) {
-						WinMove, ahk_id %wm_target_id%, , , max_j - H
+					edge_i := Monitor_EdgeScan("up_edge", X, Y, W, H)
+					edge_j := Monitor_EdgeScan("up_gap", X, Y, W, H)
+					DWM_GetBorders(wm_target_id, bL, bT, bR, bB)
+					if (edge_i != "" and edge_j != "") {
+						if (Y - edge_i < Y + H - edge_j)
+							WinMove, ahk_id %wm_target_id%, , , % edge_i - bT
+						else
+							WinMove, ahk_id %wm_target_id%, , , % edge_j - H + bB
+					} else if (edge_i != "") {
+						WinMove, ahk_id %wm_target_id%, , , % edge_i - bT
+					} else if (edge_j != "") {
+						WinMove, ahk_id %wm_target_id%, , , % edge_j - H + bB
 					}
 					KeyWait, Up, % "T" SETTING_CONSTANT_WINMOV_STEP_REP
 				}
 				if (is_down = "D") {
-					i := 0
-					loop, %monitor_no% {
-						if (monitor_%A_Index%_workarea_left < X + W) and (X < monitor_%A_Index%_workarea_right) and (Y + H < monitor_%A_Index%_workarea_bottom) {		; monitors' lefts and rights are like 0 ~ 2560, -1920 ~ 0. And mouse point is like (0, 0) ~ (2559, 1439). So adding + 0.5 will make the cases finally exclusive.
-							i++
-							x%i% := monitor_%A_Index%_workarea_bottom
-						}
-					}
-					min_i := x1
-					loop, %i% {
-						if (x%A_Index% < min_i) {
-							min_i := x%A_Index%
-						}
-					}
-
-					j := 0	; to consider the top side of a window to put a top side of a screen
-					loop, %monitor_no% {
-						if (monitor_%A_Index%_workarea_left < X + W) and (X < monitor_%A_Index%_workarea_right) and (Y < monitor_%A_Index%_workarea_top) {		; monitors' lefts and rights are like 0 ~ 2560, -1920 ~ 0. And mouse point is like (0, 0) ~ (2559, 1439). So adding + 0.5 will make the cases finally exclusive.
-							j++
-							x%j% := monitor_%A_Index%_workarea_top
-						}
-					}
-					min_j := x1
-					loop, %j% {
-						if (x%A_Index% < min_j) {
-							min_j := x%A_Index%
-						}
-					}
-
-					if (i > 0) and (j > 0) {
-						if (min_i - Y - H < min_j - Y) {
-							WinMove, ahk_id %wm_target_id%, , , min_i - H
-						} else {
-							WinMove, ahk_id %wm_target_id%, , , min_j
-						}
-					} else if (i > 0) {
-						WinMove, ahk_id %wm_target_id%, , , min_i - H
-					} else if (j > 0) {
-						WinMove, ahk_id %wm_target_id%, , , min_j
+					edge_i := Monitor_EdgeScan("down_edge", X, Y, W, H)
+					edge_j := Monitor_EdgeScan("down_gap", X, Y, W, H)
+					DWM_GetBorders(wm_target_id, bL, bT, bR, bB)
+					if (edge_i != "" and edge_j != "") {
+						if (edge_i - Y - H < edge_j - Y)
+							WinMove, ahk_id %wm_target_id%, , , % edge_i - H + bB
+						else
+							WinMove, ahk_id %wm_target_id%, , , % edge_j - bT
+					} else if (edge_i != "") {
+						WinMove, ahk_id %wm_target_id%, , , % edge_i - H + bB
+					} else if (edge_j != "") {
+						WinMove, ahk_id %wm_target_id%, , , % edge_j - bT
 					}
 					KeyWait, Down, % "T" SETTING_CONSTANT_WINMOV_STEP_REP
 				}
@@ -1234,86 +1130,54 @@ return
 ;; resize to the edge
 ;; Win+Alt+Shift+Arrow Key
 #!+Right::
-	WinGetPos, X,Y,W,H,A  ; "A" to get the active window's pos.
+	WinGet, wr_id, ID, A
+	if (!wr_id)
+		Return
+	WinGetPos, X,Y,W,H, ahk_id %wr_id%
 	CollectMonitorInfo()
-	i := 0	
-	loop, %monitor_no% {
-		if (X + W < monitor_%A_Index%_workarea_right) and (monitor_%A_Index%_workarea_top < Y + H) and (Y < monitor_%A_Index%_workarea_bottom) {		; monitors' lefts and rights are like 0 ~ 2560, -1920 ~ 0. And mouse point is like (0, 0) ~ (2559, 1439). So adding + 0.5 will make the cases finally exclusive.
-			i++
-			x%i% := monitor_%A_Index%_workarea_right
-		}
-	}
-	min_i := x1
-	loop, %i% {
-		if (x%A_Index% < min_i) {
-			min_i := x%A_Index%
-		}
-	}
-	if (i > 0) {
-		WinMove, A, , , , min_i - X,
+	edge := Monitor_EdgeScan("right_edge", X, Y, W, H)
+	if (edge != "") {
+		DWM_GetBorders(wr_id, bL, bT, bR, bB)
+		WinMove, ahk_id %wr_id%, , , , % edge - X + bR 	; grow so the VISIBLE right edge lands on the screen edge
 	}
 return
 
 #!+Left::
-	WinGetPos, X,Y,W,H,A  ; "A" to get the active window's pos.
+	WinGet, wr_id, ID, A
+	if (!wr_id)
+		Return
+	WinGetPos, X,Y,W,H, ahk_id %wr_id%
 	CollectMonitorInfo()
-	i := 0	
-	loop, %monitor_no% {
-		if (monitor_%A_Index%_workarea_left < X) and (monitor_%A_Index%_workarea_top < Y + H) and (Y < monitor_%A_Index%_workarea_bottom) {		; monitors' lefts and rights are like 0 ~ 2560, -1920 ~ 0. And mouse point is like (0, 0) ~ (2559, 1439). So adding + 0.5 will make the cases finally exclusive.
-			i++
-			x%i% := monitor_%A_Index%_workarea_left
-		}
-	}
-	max_i := x1
-	loop, %i% {
-		if (x%A_Index% > max_i) {
-			max_i := x%A_Index%
-		}
-	}
-	if (i > 0) {
-		WinMove, A, , max_i, , X + W - max_i,
+	edge := Monitor_EdgeScan("left_edge", X, Y, W, H)
+	if (edge != "") {
+		DWM_GetBorders(wr_id, bL, bT, bR, bB)
+		WinMove, ahk_id %wr_id%, , % edge - bL, , % X + W - edge + bL 	; grow left so the VISIBLE left edge lands on the screen edge
 	}
 return
 
 #!+Up::
-	WinGetPos, X,Y,W,H,A  ; "A" to get the active window's pos.
+	WinGet, wr_id, ID, A
+	if (!wr_id)
+		Return
+	WinGetPos, X,Y,W,H, ahk_id %wr_id%
 	CollectMonitorInfo()
-	i := 0
-	loop, %monitor_no% {
-		if (monitor_%A_Index%_workarea_left < X + W) and (X < monitor_%A_Index%_workarea_right) and (monitor_%A_Index%_workarea_top < Y) {		; monitors' lefts and rights are like 0 ~ 2560, -1920 ~ 0. And mouse point is like (0, 0) ~ (2559, 1439). So adding + 0.5 will make the cases finally exclusive.
-			i++
-			x%i% := monitor_%A_Index%_workarea_top
-		}
-	}
-	max_i := x1
-	loop, %i% {
-		if (x%A_Index% > max_i) {
-			max_i := x%A_Index%
-		}
-	}
-	if (i > 0) {
-		WinMove, A, , , max_i, , Y + H - max_i
+	edge := Monitor_EdgeScan("up_edge", X, Y, W, H)
+	if (edge != "") {
+		DWM_GetBorders(wr_id, bL, bT, bR, bB)
+		WinMove, ahk_id %wr_id%, , , % edge - bT, , % Y + H - edge + bT 	; grow up so the VISIBLE top edge lands on the screen edge
 	}
 return
 
 #!+Down::
-	WinGetPos, X,Y,W,H,A  ; "A" to get the active window's pos.
+	WinGet, wr_id, ID, A
+	if (!wr_id)
+		Return
+	WinGetPos, X,Y,W,H, ahk_id %wr_id%
 	CollectMonitorInfo()
-	i := 0
-	loop, %monitor_no% {
-		if (monitor_%A_Index%_workarea_left < X + W) and (X < monitor_%A_Index%_workarea_right) and (Y + H < monitor_%A_Index%_workarea_bottom) {		; monitors' lefts and rights are like 0 ~ 2560, -1920 ~ 0. And mouse point is like (0, 0) ~ (2559, 1439). So adding + 0.5 will make the cases finally exclusive.
-			i++
-			x%i% := monitor_%A_Index%_workarea_bottom
-		}
-	}
-	min_i := x1
-	loop, %i% {
-		if (x%A_Index% < min_i) {
-			min_i := x%A_Index%
-		}
-	}
-	if (i > 0) {
-		WinMove, A, , , , , min_i - Y
+	edge := Monitor_EdgeScan("down_edge", X, Y, W, H)
+	if (edge != "") {
+		DWM_GetBorders(wr_id, bL, bT, bR, bB)
+		WinMove, ahk_id %wr_id%, , , , , % edge - Y + bB 	; grow so the VISIBLE bottom edge lands on the screen edge
 	}
 return
 
@@ -3307,6 +3171,7 @@ Show_Windows(vProcessName, vID, girdMode) {
 			WinRestore, % "ahk_id " AltTabListSameType[A_Index].ID 	; this is the problem.
 
 			WinGetPos, temp_x, temp_y, temp_w, temp_h, % "ahk_id " AltTabListSameType[A_Index].ID
+			DWM_GetVisibleRect(AltTabListSameType[A_Index].ID, temp_x, temp_y, temp_w, temp_h) 	; measure the VISIBLE frame so spread layouts sit flush
 			AltTabListSameType[A_Index].x := temp_x  
 			AltTabListSameType[A_Index].y := temp_y
 			AltTabListSameType[A_Index].width := temp_w
@@ -3338,7 +3203,7 @@ Show_Windows(vProcessName, vID, girdMode) {
 			spreadFExp_top := monitor_%monitor_no_prm%_workarea_center_y - AltTabListSameType.max_h / 2
 			Loop, % AltTabListSameType.length() {
 				temp_index := AltTabListSameType.length() - A_Index + 1
-				WinMove, % "ahk_id " AltTabListSameType[temp_index].ID, , spreadFExp_left, spreadFExp_top
+				DWM_WinMove("ahk_id " AltTabListSameType[temp_index].ID, spreadFExp_left, spreadFExp_top)
 				PulseTop(AltTabListSameType[temp_index].ID)
 				spreadFExp_left += AltTabListSameType[temp_index].width
 			}
@@ -3348,7 +3213,7 @@ Show_Windows(vProcessName, vID, girdMode) {
 			spreadFExp_top := monitor_%monitor_no_prm%_workarea_center_y - AltTabListSameType.all_h / 2
 			Loop, % AltTabListSameType.length() {
 				temp_index := AltTabListSameType.length() - A_Index + 1
-				WinMove, % "ahk_id " AltTabListSameType[temp_index].ID, , spreadFExp_left, spreadFExp_top
+				DWM_WinMove("ahk_id " AltTabListSameType[temp_index].ID, spreadFExp_left, spreadFExp_top)
 				;DllCall("MoveWindow", UInt, AltTabListSameType[temp_index].ID, UInt, spreadFExpEach_x, UInt, spreadFExpEach_y, UInt, AltTabListSameType[temp_index].width, UInt, AltTabListSameType[temp_index].height, Int, 1)
 				PulseTop(AltTabListSameType[temp_index].ID)
 				spreadFExp_top += AltTabListSameType[temp_index].height
@@ -3366,7 +3231,7 @@ Show_Windows(vProcessName, vID, girdMode) {
 				temp_index := AltTabListSameType.length() - A_Index + 1
 				spreadFExpEach_x := spreadFExp_left + spreadFExp_step_width * (A_Index - 1)
 				spreadFExpEach_y := spreadFExp_top + spreadFExp_step_height * (A_Index - 1)
-				WinMove, % "ahk_id " AltTabListSameType[temp_index].ID, , spreadFExpEach_x, spreadFExpEach_y 	; When SetWinDelay, -1 is declared, WinMove is as fast as DllCall("MoveWindow".. .
+				DWM_WinMove("ahk_id " AltTabListSameType[temp_index].ID, spreadFExpEach_x, spreadFExpEach_y) 	; When SetWinDelay, -1 is declared, WinMove is as fast as DllCall("MoveWindow".. .
 				;DllCall("MoveWindow", UInt, AltTabListSameType[temp_index].ID, UInt, spreadFExpEach_x, UInt, spreadFExpEach_y, UInt, AltTabListSameType[temp_index].width, UInt, AltTabListSameType[temp_index].height, Int, 1)
 				PulseTop(AltTabListSameType[temp_index].ID)
 			}
@@ -3469,18 +3334,18 @@ Show_Windows(vProcessName, vID, girdMode) {
 				
 
 				if (((over_w_norm > 0) and !(over_h > 0)) or ((over_w_norm > 0) and (over_h > 0))) {
-					WinMove, % "ahk_id " FExpStack_leftFExp, , monitor_%monitor_no_prm%_workarea_left, monitor_%monitor_no_prm%_workarea_top
-					WinMove, % "ahk_id " FExpStack_bottomFExp, , monitor_%monitor_no_prm%_workarea_left, monitor_%monitor_no_prm%_workarea_bottom - FExpStack_bottomFExp_h_norm 	; FExpStack_bottomFExp = AltTabListSameType_sorted_w_norm_desc[1].ID
+					DWM_WinMove("ahk_id " FExpStack_leftFExp, monitor_%monitor_no_prm%_workarea_left, monitor_%monitor_no_prm%_workarea_top)
+					DWM_WinMove("ahk_id " FExpStack_bottomFExp, monitor_%monitor_no_prm%_workarea_left, monitor_%monitor_no_prm%_workarea_bottom - FExpStack_bottomFExp_h_norm) 	; FExpStack_bottomFExp = AltTabListSameType_sorted_w_norm_desc[1].ID
 					FExpStack_rightFExp_yAdj := (AltTabListSameType.all_h - monitor_%monitor_no_prm%_workarea_height)/2 * 1.5 	; 1.5 is an adjustment ratio
-					WinMove, % "ahk_id " FExpStack_rightFExp, , monitor_%monitor_no_prm%_workarea_right - FExpStack_rightFExp_w_norm/monitor_%monitor_no_prm%_workarea_ratio, FExpStack_leftFExp_h_norm - FExpStack_rightFExp_yAdj
+					DWM_WinMove("ahk_id " FExpStack_rightFExp, monitor_%monitor_no_prm%_workarea_right - FExpStack_rightFExp_w_norm/monitor_%monitor_no_prm%_workarea_ratio, FExpStack_leftFExp_h_norm - FExpStack_rightFExp_yAdj)
 				} else if (!(over_w_norm > 0) and (over_h > 0)) {
 					if ((FExpStack_leftFExp_h_norm + FExpStack_bottomFExp_h_norm) < monitor_%monitor_no_prm%_workarea_height) {
-						WinMove, % "ahk_id " FExpStack_leftFExp, , monitor_%monitor_no_prm%_workarea_right - (FExpStack_rightFExp_w_norm + FExpStack_leftFExp_w_norm)/monitor_%monitor_no_prm%_workarea_ratio, monitor_%monitor_no_prm%_workarea_bottom - FExpStack_bottomFExp_h_norm - FExpStack_leftFExp_h_norm
+						DWM_WinMove("ahk_id " FExpStack_leftFExp, monitor_%monitor_no_prm%_workarea_right - (FExpStack_rightFExp_w_norm + FExpStack_leftFExp_w_norm)/monitor_%monitor_no_prm%_workarea_ratio, monitor_%monitor_no_prm%_workarea_bottom - FExpStack_bottomFExp_h_norm - FExpStack_leftFExp_h_norm)
 					} else {
-						WinMove, % "ahk_id " FExpStack_leftFExp, , monitor_%monitor_no_prm%_workarea_right - (FExpStack_rightFExp_w_norm + FExpStack_leftFExp_w_norm)/monitor_%monitor_no_prm%_workarea_ratio, monitor_%monitor_no_prm%_workarea_top
+						DWM_WinMove("ahk_id " FExpStack_leftFExp, monitor_%monitor_no_prm%_workarea_right - (FExpStack_rightFExp_w_norm + FExpStack_leftFExp_w_norm)/monitor_%monitor_no_prm%_workarea_ratio, monitor_%monitor_no_prm%_workarea_top)
 					}
-					WinMove, % "ahk_id " FExpStack_bottomFExp, , monitor_%monitor_no_prm%_workarea_left, monitor_%monitor_no_prm%_workarea_bottom - FExpStack_bottomFExp_h_norm 	; FExpStack_bottomFExp = AltTabListSameType_sorted_w_norm_desc[1].ID
-					WinMove, % "ahk_id " FExpStack_rightFExp, , monitor_%monitor_no_prm%_workarea_right - FExpStack_rightFExp_w_norm/monitor_%monitor_no_prm%_workarea_ratio, monitor_%monitor_no_prm%_workarea_top
+					DWM_WinMove("ahk_id " FExpStack_bottomFExp, monitor_%monitor_no_prm%_workarea_left, monitor_%monitor_no_prm%_workarea_bottom - FExpStack_bottomFExp_h_norm) 	; FExpStack_bottomFExp = AltTabListSameType_sorted_w_norm_desc[1].ID
+					DWM_WinMove("ahk_id " FExpStack_rightFExp, monitor_%monitor_no_prm%_workarea_right - FExpStack_rightFExp_w_norm/monitor_%monitor_no_prm%_workarea_ratio, monitor_%monitor_no_prm%_workarea_top)
 				;} else if ((over_w_norm > 0) and (over_h > 0)) {
 				} else if (!(over_w_norm > 0) and !(over_h > 0)) {
 					;ToolTip, % "over_w_norm " over_w_norm " FExpStack_rightFExp_yAdj " FExpStack_rightFExp_yAdj 
@@ -3489,9 +3354,9 @@ Show_Windows(vProcessName, vID, girdMode) {
 					spreadFExp_right := spreadFExp_left + horizontalLength_norm_net/monitor_%monitor_no_prm%_workarea_ratio
 					spreadFExp_bottom := spreadFExp_top + verticalLength_net
 
-					WinMove, % "ahk_id " FExpStack_leftFExp, , spreadFExp_right - (FExpStack_rightFExp_w_norm + FExpStack_leftFExp_w_norm)/monitor_%monitor_no_prm%_workarea_ratio, spreadFExp_bottom - FExpStack_bottomFExp_h_norm - FExpStack_leftFExp_h_norm
-					WinMove, % "ahk_id " FExpStack_bottomFExp, , spreadFExp_left, spreadFExp_bottom - FExpStack_bottomFExp_h_norm 	; FExpStack_bottomFExp = AltTabListSameType_sorted_w_norm_desc[1].ID
-					WinMove, % "ahk_id " FExpStack_rightFExp, , spreadFExp_right - FExpStack_rightFExp_w_norm/monitor_%monitor_no_prm%_workarea_ratio, spreadFExp_top
+					DWM_WinMove("ahk_id " FExpStack_leftFExp, spreadFExp_right - (FExpStack_rightFExp_w_norm + FExpStack_leftFExp_w_norm)/monitor_%monitor_no_prm%_workarea_ratio, spreadFExp_bottom - FExpStack_bottomFExp_h_norm - FExpStack_leftFExp_h_norm)
+					DWM_WinMove("ahk_id " FExpStack_bottomFExp, spreadFExp_left, spreadFExp_bottom - FExpStack_bottomFExp_h_norm) 	; FExpStack_bottomFExp = AltTabListSameType_sorted_w_norm_desc[1].ID
+					DWM_WinMove("ahk_id " FExpStack_rightFExp, spreadFExp_right - FExpStack_rightFExp_w_norm/monitor_%monitor_no_prm%_workarea_ratio, spreadFExp_top)
 				}
 				
 
@@ -3552,18 +3417,18 @@ Show_Windows(vProcessName, vID, girdMode) {
 ;;;;;===================================00000000000000000000000000000
 				
 				if (((over_h > 0) and !(over_w_norm > 0)) or ((over_h > 0) and (over_w_norm > 0))) {
-					WinMove, % "ahk_id " FExpStack_topFExp, , monitor_%monitor_no_prm%_workarea_left, monitor_%monitor_no_prm%_workarea_top
-					WinMove, % "ahk_id " FExpStack_rightFExp, , monitor_%monitor_no_prm%_workarea_right - FExpStack_rightFExp_w_norm / monitor_%monitor_no_prm%_workarea_ratio, monitor_%monitor_no_prm%_workarea_top
+					DWM_WinMove("ahk_id " FExpStack_topFExp, monitor_%monitor_no_prm%_workarea_left, monitor_%monitor_no_prm%_workarea_top)
+					DWM_WinMove("ahk_id " FExpStack_rightFExp, monitor_%monitor_no_prm%_workarea_right - FExpStack_rightFExp_w_norm / monitor_%monitor_no_prm%_workarea_ratio, monitor_%monitor_no_prm%_workarea_top)
 					FExpStack_bottomFExp_xAdj := (AltTabListSameType.all_w - monitor_%monitor_no_prm%_workarea_width)/2 * 1.5 	; 1.5 is an adjustment ratio. It's not a normalized value
-					WinMove, % "ahk_id " FExpStack_bottomFExp, , FExpStack_topFExp_w_norm / monitor_%monitor_no_prm%_workarea_ratio - FExpStack_bottomFExp_xAdj, monitor_%monitor_no_prm%_workarea_bottom - FExpStack_bottomFExp_h_norm
+					DWM_WinMove("ahk_id " FExpStack_bottomFExp, FExpStack_topFExp_w_norm / monitor_%monitor_no_prm%_workarea_ratio - FExpStack_bottomFExp_xAdj, monitor_%monitor_no_prm%_workarea_bottom - FExpStack_bottomFExp_h_norm)
 				} else if (!(over_h > 0) and (over_w_norm > 0)) {
 					if ((FExpStack_topFExp_w_norm + FExpStack_rightFExp_w_norm) < monitor_%monitor_no_prm%_workarea_width * monitor_%monitor_no_prm%_workarea_ratio) {
-						WinMove, % "ahk_id " FExpStack_topFExp, , monitor_%monitor_no_prm%_workarea_right - (FExpStack_rightFExp_w_norm + FExpStack_topFExp_w_norm) /  monitor_%monitor_no_prm%_workarea_ratio, monitor_%monitor_no_prm%_workarea_bottom - (FExpStack_bottomFExp_h_norm + FExpStack_topFExp_h_norm)
+						DWM_WinMove("ahk_id " FExpStack_topFExp, monitor_%monitor_no_prm%_workarea_right - (FExpStack_rightFExp_w_norm + FExpStack_topFExp_w_norm) /  monitor_%monitor_no_prm%_workarea_ratio, monitor_%monitor_no_prm%_workarea_bottom - (FExpStack_bottomFExp_h_norm + FExpStack_topFExp_h_norm))
 					} else {
-						WinMove, % "ahk_id " FExpStack_topFExp, , monitor_%monitor_no_prm%_workarea_left, monitor_%monitor_no_prm%_workarea_bottom - (FExpStack_bottomFExp_h_norm + FExpStack_topFExp_h_norm)
+						DWM_WinMove("ahk_id " FExpStack_topFExp, monitor_%monitor_no_prm%_workarea_left, monitor_%monitor_no_prm%_workarea_bottom - (FExpStack_bottomFExp_h_norm + FExpStack_topFExp_h_norm))
 					}
-					WinMove, % "ahk_id " FExpStack_rightFExp, , monitor_%monitor_no_prm%_workarea_right - FExpStack_rightFExp_w_norm / monitor_%monitor_no_prm%_workarea_ratio, monitor_%monitor_no_prm%_workarea_top
-					WinMove, % "ahk_id " FExpStack_bottomFExp, , monitor_%monitor_no_prm%_workarea_left, monitor_%monitor_no_prm%_workarea_bottom - FExpStack_bottomFExp_h_norm
+					DWM_WinMove("ahk_id " FExpStack_rightFExp, monitor_%monitor_no_prm%_workarea_right - FExpStack_rightFExp_w_norm / monitor_%monitor_no_prm%_workarea_ratio, monitor_%monitor_no_prm%_workarea_top)
+					DWM_WinMove("ahk_id " FExpStack_bottomFExp, monitor_%monitor_no_prm%_workarea_left, monitor_%monitor_no_prm%_workarea_bottom - FExpStack_bottomFExp_h_norm)
 				;} else if ((over_h > 0) and (over_w_norm > 0)) {
 				} else if (!(over_h > 0) and !(over_w_norm > 0)) {
 					;ToolTip, % "over_h " over_h " FExpStack_bottomFExp_xAdj " FExpStack_bottomFExp_xAdj 
@@ -3572,9 +3437,9 @@ Show_Windows(vProcessName, vID, girdMode) {
 					spreadFExp_bottom := spreadFExp_top + verticalLength_net
 					spreadFExp_right := spreadFExp_left + horizontalLength_norm_net / monitor_%monitor_no_prm%_workarea_ratio
 
-					WinMove, % "ahk_id " FExpStack_topFExp, , spreadFExp_right - (FExpStack_rightFExp_w_norm + FExpStack_topFExp_w_norm) / monitor_%monitor_no_prm%_workarea_ratio, spreadFExp_bottom - (FExpStack_bottomFExp_h_norm + FExpStack_topFExp_h_norm)
-					WinMove, % "ahk_id " FExpStack_rightFExp, , spreadFExp_right - FExpStack_rightFExp_w_norm / monitor_%monitor_no_prm%_workarea_ratio, spreadFExp_top 	; (was spreadFExp_left — an X value pasted into the Y slot)
-					WinMove, % "ahk_id " FExpStack_bottomFExp, , spreadFExp_left, spreadFExp_bottom - FExpStack_bottomFExp_h_norm					
+					DWM_WinMove("ahk_id " FExpStack_topFExp, spreadFExp_right - (FExpStack_rightFExp_w_norm + FExpStack_topFExp_w_norm) / monitor_%monitor_no_prm%_workarea_ratio, spreadFExp_bottom - (FExpStack_bottomFExp_h_norm + FExpStack_topFExp_h_norm))
+					DWM_WinMove("ahk_id " FExpStack_rightFExp, spreadFExp_right - FExpStack_rightFExp_w_norm / monitor_%monitor_no_prm%_workarea_ratio, spreadFExp_top) 	; (was spreadFExp_left — an X value pasted into the Y slot)
+					DWM_WinMove("ahk_id " FExpStack_bottomFExp, spreadFExp_left, spreadFExp_bottom - FExpStack_bottomFExp_h_norm)
 				}
 				
 
@@ -3752,10 +3617,10 @@ Show_Windows(vProcessName, vID, girdMode) {
 
 			; Now move and put windows
 
-				WinMove, % "ahk_id " spreadFExp_4_1_1_ID, , spreadFExp_4_1_1_x, spreadFExp_4_1_1_y 
-				WinMove, % "ahk_id " spreadFExp_4_1_2_ID, , spreadFExp_4_1_2_x, spreadFExp_4_1_2_y 
-				WinMove, % "ahk_id " spreadFExp_4_2_1_ID, , spreadFExp_4_2_1_x, spreadFExp_4_2_1_y 
-				WinMove, % "ahk_id " spreadFExp_4_2_2_ID, , spreadFExp_4_2_2_x, spreadFExp_4_2_2_y 
+				DWM_WinMove("ahk_id " spreadFExp_4_1_1_ID, spreadFExp_4_1_1_x, spreadFExp_4_1_1_y)
+				DWM_WinMove("ahk_id " spreadFExp_4_1_2_ID, spreadFExp_4_1_2_x, spreadFExp_4_1_2_y)
+				DWM_WinMove("ahk_id " spreadFExp_4_2_1_ID, spreadFExp_4_2_1_x, spreadFExp_4_2_1_y)
+				DWM_WinMove("ahk_id " spreadFExp_4_2_2_ID, spreadFExp_4_2_2_x, spreadFExp_4_2_2_y)
 				
 				
 
@@ -3837,10 +3702,10 @@ Show_Windows(vProcessName, vID, girdMode) {
 			spreadFExp_4_2_2_x := monitor_%monitor_no_prm%_workarea_right - spreadFExp_4_2_2_w
 			spreadFExp_4_2_2_y := monitor_%monitor_no_prm%_workarea_top
 
-			WinMove, % "ahk_id " spreadFExp_4_1_1_ID, , spreadFExp_4_1_1_x, spreadFExp_4_1_1_y 
-			WinMove, % "ahk_id " spreadFExp_4_1_2_ID, , spreadFExp_4_1_2_x, spreadFExp_4_1_2_y 
-			WinMove, % "ahk_id " spreadFExp_4_2_1_ID, , spreadFExp_4_2_1_x, spreadFExp_4_2_1_y 
-			WinMove, % "ahk_id " spreadFExp_4_2_2_ID, , spreadFExp_4_2_2_x, spreadFExp_4_2_2_y 
+			DWM_WinMove("ahk_id " spreadFExp_4_1_1_ID, spreadFExp_4_1_1_x, spreadFExp_4_1_1_y)
+			DWM_WinMove("ahk_id " spreadFExp_4_1_2_ID, spreadFExp_4_1_2_x, spreadFExp_4_1_2_y)
+			DWM_WinMove("ahk_id " spreadFExp_4_2_1_ID, spreadFExp_4_2_1_x, spreadFExp_4_2_1_y)
+			DWM_WinMove("ahk_id " spreadFExp_4_2_2_ID, spreadFExp_4_2_2_x, spreadFExp_4_2_2_y)
 
 			PulseTop(spreadFExp_4_1_2_ID)
 			PulseTop(spreadFExp_4_2_2_ID)
@@ -3858,7 +3723,7 @@ Show_Windows(vProcessName, vID, girdMode) {
 				temp_index := AltTabListSameType.length() - A_Index
 				spreadFExpEach_x := spreadFExp_left + spreadFExp_step_width * A_Index
 				spreadFExpEach_y := spreadFExp_top + spreadFExp_step_height * A_Index
-				WinMove, % "ahk_id " AltTabListSameType_sorted_area_desc[temp_index].ID, , spreadFExpEach_x, spreadFExpEach_y 
+				DWM_WinMove("ahk_id " AltTabListSameType_sorted_area_desc[temp_index].ID, spreadFExpEach_x, spreadFExpEach_y)
 				PulseTop(AltTabListSameType_sorted_area_desc[temp_index].ID)
 			}
 
@@ -3879,7 +3744,7 @@ Show_Windows(vProcessName, vID, girdMode) {
 				temp_index := AltTabListSameType.length() - A_Index + 1
 				spreadFExpEach_x := spreadFExp_left + spreadFExp_step_width * (A_Index - 1)
 				spreadFExpEach_y := spreadFExp_top + spreadFExp_step_height * (A_Index - 1)
-				WinMove, % "ahk_id " AltTabListSameType[temp_index].ID, , spreadFExpEach_x, spreadFExpEach_y 	; When SetWinDelay, -1 is declared, WinMove is as fast as DllCall("MoveWindow".. .
+				DWM_WinMove("ahk_id " AltTabListSameType[temp_index].ID, spreadFExpEach_x, spreadFExpEach_y) 	; When SetWinDelay, -1 is declared, WinMove is as fast as DllCall("MoveWindow".. .
 				PulseTop(AltTabListSameType[temp_index].ID)
 			}
 			WinActivate, % "ahk_id " AltTabListSameType[1].ID
@@ -4172,4 +4037,74 @@ SeekArrow_FindNext(dirX, dirY) {
 		}
 	}
 	Return sa_best
+}
+
+Monitor_EdgeScan(mode, X, Y, W, H) {
+	; Scans all monitors' work areas (CollectMonitorInfo must have run) and returns the nearest
+	; relevant edge coordinate for moving/resizing the window rect (X,Y,W,H) toward a direction,
+	; or "" if no monitor qualifies. This replaces twelve near-identical collect-then-min/max loops.
+	;   *_edge = attach the window's own side to that screen edge
+	;   *_gap  = jump to the facing edge of the next monitor in that direction
+	global
+	mes_result := ""
+	Loop, %monitor_no% {
+		mes_vOv := (monitor_%A_Index%_workarea_top < Y + H) and (Y < monitor_%A_Index%_workarea_bottom)
+		mes_hOv := (monitor_%A_Index%_workarea_left < X + W) and (X < monitor_%A_Index%_workarea_right)
+		mes_cand := ""
+		if (mode = "right_edge" and mes_vOv and X + W < monitor_%A_Index%_workarea_right)
+			mes_cand := monitor_%A_Index%_workarea_right
+		else if (mode = "right_gap" and mes_vOv and X < monitor_%A_Index%_workarea_left)
+			mes_cand := monitor_%A_Index%_workarea_left
+		else if (mode = "left_edge" and mes_vOv and monitor_%A_Index%_workarea_left < X)
+			mes_cand := monitor_%A_Index%_workarea_left
+		else if (mode = "left_gap" and mes_vOv and monitor_%A_Index%_workarea_right < X + W)
+			mes_cand := monitor_%A_Index%_workarea_right
+		else if (mode = "up_edge" and mes_hOv and monitor_%A_Index%_workarea_top < Y)
+			mes_cand := monitor_%A_Index%_workarea_top
+		else if (mode = "up_gap" and mes_hOv and monitor_%A_Index%_workarea_bottom < Y + H)
+			mes_cand := monitor_%A_Index%_workarea_bottom
+		else if (mode = "down_edge" and mes_hOv and Y + H < monitor_%A_Index%_workarea_bottom)
+			mes_cand := monitor_%A_Index%_workarea_bottom
+		else if (mode = "down_gap" and mes_hOv and Y < monitor_%A_Index%_workarea_top)
+			mes_cand := monitor_%A_Index%_workarea_top
+		if (mes_cand = "")
+			continue
+		if (mes_result = "")
+			mes_result := mes_cand
+		else if (InStr(mode, "right") or InStr(mode, "down"))
+			mes_result := mes_cand < mes_result ? mes_cand : mes_result 	; toward increasing coordinates: nearest = minimum
+		else
+			mes_result := mes_cand > mes_result ? mes_cand : mes_result 	; toward decreasing coordinates: nearest = maximum
+	}
+	Return mes_result
+}
+
+DWM_GetBorders(vID, ByRef bL, ByRef bT, ByRef bR, ByRef bB) {
+	; Measures the invisible DWM border thickness on each side of the window. Zeroes if unavailable.
+	bL := 0
+	bT := 0
+	bR := 0
+	bB := 0
+	VarSetCapacity(dgb_rect, 16, 0)
+	VarSetCapacity(dgb_ext, 16, 0)
+	if (!DllCall("GetWindowRect", "Ptr", vID+0, "Ptr", &dgb_rect))
+		Return
+	if (DllCall("dwmapi\DwmGetWindowAttribute", "Ptr", vID+0, "UInt", 9, "Ptr", &dgb_ext, "UInt", 16) != 0) 	; 9 = DWMWA_EXTENDED_FRAME_BOUNDS
+		Return
+	bL := NumGet(dgb_ext, 0, "Int") - NumGet(dgb_rect, 0, "Int")
+	bT := NumGet(dgb_ext, 4, "Int") - NumGet(dgb_rect, 4, "Int")
+	bR := NumGet(dgb_rect, 8, "Int") - NumGet(dgb_ext, 8, "Int")
+	bB := NumGet(dgb_rect, 12, "Int") - NumGet(dgb_ext, 12, "Int")
+}
+
+DWM_GetVisibleRect(vID, ByRef x, ByRef y, ByRef w, ByRef h) {
+	; Replaces a WinGetPos-style rect with the window's VISIBLE frame rect
+	; (DWMWA_EXTENDED_FRAME_BOUNDS). Leaves the values untouched if DWM info is unavailable.
+	VarSetCapacity(dvr_ext, 16, 0)
+	if (DllCall("dwmapi\DwmGetWindowAttribute", "Ptr", vID+0, "UInt", 9, "Ptr", &dvr_ext, "UInt", 16) = 0) {
+		x := NumGet(dvr_ext, 0, "Int")
+		y := NumGet(dvr_ext, 4, "Int")
+		w := NumGet(dvr_ext, 8, "Int") - x
+		h := NumGet(dvr_ext, 12, "Int") - y
+	}
 }
