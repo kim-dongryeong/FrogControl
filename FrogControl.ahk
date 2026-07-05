@@ -4,7 +4,7 @@ AppName 		:= "FrogControl"
 AppAuthor 		:= "Kim Dongryeong"
 AppAuthorEmail	:= "kdr@namouli.com"
 AppUpdateDate 	:= "2026-07-05"
-AppVersion 		:= "2.0.0-beta.1"
+AppVersion 		:= "2.0.0"
 AppSite			:= "https://github.com/kim-dongryeong/FrogControl"
 
 ; ---------------------------------------------------------------

@@ -4,11 +4,12 @@ history
 (older entries consolidated from the history.txt files kept alongside pre-git versions
  in "K:\My Drive\_MainDrive\software-portable\AutoHotKey\dk-my macro")
 
-2.0.0-beta.1 (2026-07-05)
+2.0.0 (2026-07-05)
 New version scheme. The 1.15 alpha line ends with 1.15.alpha.3 (2024); the long gap and the
-audit + refactor overhauls below mark the jump to 2.x. From now on: MAJOR.MINOR.PATCH, with
--alpha.N / -beta.N pre-releases. The two 2026-07-05 releases below were renumbered retroactively
-into the 2.0 line (they were first committed as 1.15.alpha.4 / 1.15.alpha.5).
+audit + refactor overhauls below mark the jump to 2.x. From now on, plain MAJOR.MINOR.PATCH
+with no alpha/beta suffixes: fixes bump the patch (2.0.1, 2.0.2, ...), bigger feature batches
+bump the minor (2.1.0). The two 2026-07-05 releases below were renumbered retroactively into
+the 2.0 line (they were first committed as 1.15.alpha.4 / 1.15.alpha.5).
 - added a Reload item to the tray menu to apply script changes without exiting
   (re-running FrogControl.ahk also replaces the running instance thanks to #SingleInstance Force)
 
