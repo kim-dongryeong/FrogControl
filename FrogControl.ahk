@@ -4,7 +4,7 @@ AppName 		:= "FrogControl"
 AppAuthor 		:= "Kim Dongryeong"
 AppAuthorEmail	:= "kdr@namouli.com"
 AppUpdateDate 	:= "2026-07-05"
-AppVersion 		:= "1.15.alpha.5"
+AppVersion 		:= "2.0.0-beta.1"
 AppSite			:= "https://github.com/kim-dongryeong/FrogControl"
 
 ; ---------------------------------------------------------------
@@ -94,11 +94,16 @@ Menu, tray, add  ; Creates a separator line.
 Menu, tray, add, About (Korean), MenuHandlerKo  ; Creates a new menu item.
 Menu, tray, add, About (English), MenuHandlerEn  ; Creates a new menu item.
 Menu, tray, add
+Menu, tray, add, Reload, ReloadScript 	; apply script changes without exiting (re-running FrogControl.ahk also works: #SingleInstance Force replaces the old instance)
 Menu, tray, add, Exit, GoExit
 return
 
 #a::Goto, AlwaysOnTop
 
+
+ReloadScript:
+Reload
+Return
 
 GoExit:
 ExitApp
