@@ -7,6 +7,13 @@ FrogControl is a tiny free tool of open source for Windows computers which allow
 
 For example, it will make it easier to move, resize, minimize and close windows and control the volume.
 
+## Requirements
+
+- Windows
+- AutoHotkey v1.1 — this script uses AutoHotkey v1 syntax and does **not** run on AutoHotkey v2.
+
+Run `FrogControl.ahk` with AutoHotkey v1.1 installed. The shortcut list files (`shortcut list-en.txt`, `shortcut list-ko.txt`) and the icon should stay next to the script.
+
 
 -------------
 

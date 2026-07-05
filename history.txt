@@ -4,6 +4,21 @@ history
 (older entries consolidated from the history.txt files kept alongside pre-git versions
  in "K:\My Drive\_MainDrive\software-portable\AutoHotKey\dk-my macro")
 
+1.15.alpha.5 (2026-07-05)
+Refactoring and DWM border fix. The script file is now just "FrogControl.ahk" (the version lives in AppVersion and git, not in the filename).
+- NEW: window snapping and grid placement compensate for the invisible DWM borders of Windows 10/11, so snapped windows sit flush with no ~7-14 px gaps (CapsLock+LButton snap zones, CapsLock+Ctrl+Arrow grid, Show_Windows grid)
+- +F1/+F2 now delegate to Show_Windows() like +F5/+F6 (removed the old Explorer-only duplicate layout engine, ~830 lines; window filtering is now by process "Explorer.exe" instead of window class, same as +F5/+F6)
+- extracted shared helpers: CollectMonitorInfo(), CountRecentTaps(), Volume_Adjust(), ShowHelp(), WheelScroll_CapsFast/OfficeFast(), DWM_WinMove()
+- help window (En/Ko) is built by one function instead of two near-identical blocks
+- added #Requires AutoHotkey v1.1 (clear error instead of confusing failures under AutoHotkey v2)
+- Ctrl+Shift+Alt+RightClick (close window) can no longer hang forever (0.5 s activation timeout)
+- ruler mode: BlockInput is now always released (10 s timeout) - a missed Space press can no longer leave input blocked
+- Excel/Word COM scrolling wrapped in try/catch with plain-wheel fallback (no more error dialogs when Office is busy)
+- grid division-by-zero guard for very small screens (RDP, portrait monitors)
+- Show_Windows: safe early return when no matching window exists; stale monitor-index fix
+- removed the broken, unused ObjectClone()
+- net -871 lines (5,280 -> 4,409)
+
 1.15.alpha.4 (2026-07-05)
 Full audit pass: many bug fixes and performance optimizations. No hotkey changes.
 Performance:

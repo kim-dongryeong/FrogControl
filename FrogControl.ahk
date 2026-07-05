@@ -1,9 +1,10 @@
-﻿; ---------------------------------------------------------------
+﻿#Requires AutoHotkey v1.1 	; v1 syntax - does NOT run on AutoHotkey v2
+; ---------------------------------------------------------------
 AppName 		:= "FrogControl"
 AppAuthor 		:= "Kim Dongryeong"
 AppAuthorEmail	:= "kdr@namouli.com"
 AppUpdateDate 	:= "2026-07-05"
-AppVersion 		:= "1.15.alpha.4"
+AppVersion 		:= "1.15.alpha.5"
 AppSite			:= "https://github.com/kim-dongryeong/FrogControl"
 
 ; ---------------------------------------------------------------
@@ -125,47 +126,7 @@ menu, tray, rename, %OldName%, %NewName%
 return
 
 MenuHandlerEn:
-Gui, helpEn: Destroy 	; Gui New does NOT replace an existing window of the same name; without this, windows accumulate
-Gui, helpEn: New
-If( !A_IsCompiled && FileExist(A_ScriptDir . "\frog face icon 3.ico")) {
-	Gui, helpEn: Add , Picture, w40 h40, %A_ScriptDir%\frog face icon 3.ico
-} else {
-	Gui, helpEn: Add , Picture, icon1, %A_WorkingDir%\FrogControl.exe
-}
-Gui, helpEn:Font,s15
-Gui, helpEn:Add,Text,x+10 yp+10, % AppName " Help"
-Gui, helpEn:Font
-Gui, helpEn:Add,Text,xm, Shortcut list
-Gui, helpEn:Font, , Consolas
-Gui, helpEn: Add, ListView, r25 w1111, Hotkey|Action
-if (!FileExist(A_ScriptDir . "\shortcut list-en.txt"))
-	LV_Add("", "(file not found)", A_ScriptDir . "\shortcut list-en.txt")
-Loop, read, %A_ScriptDir%\shortcut list-en.txt
-{
-	inLine_1 := ""
-	inLine_2 := ""
-	Loop, parse, A_LoopReadLine, %A_Tab%
-	{
-		inLine_%A_Index% := A_LoopField
-	}
-	LV_Add("", inLine_1, inLine_2)
-}
-LV_ModifyCol()  ; Auto-size each column to fit its contents.
-
-Gui, helpEn:Font
-Gui, helpEn: Add, Text,,
-Gui, helpEn:Add,Text,xm, % "Version " AppVersion " (" AppUpdateDate ")"
-Gui, helpEn: Add, Link, y+3, % "<a href=""" AppSite """>" AppSite "</a>"
-Gui, helpEn:Add,Text,x+10 yp+10,
-Gui, helpEn:Font
-Gui, helpEn:Add,Text,xm, % "Created by " AppAuthor
-Gui, helpEn: Add, Link, y+3, % "<a href=""mailto:" AppAuthorEmail """>" AppAuthorEmail "</a>"
-Gui, helpEn:Font
-Gui, helpEn:Add,Text,y+0,`t
-Gui, helpEn:Add,Button,GABOUTOK Default w75,&OK
-GuiControl, Focus, &OK
-Gui, helpEn: Show, , FrogControl Help
-FLAG_HELP_LANG := 1
+	ShowHelp("en")
 Return
 
 ABOUTOK:
@@ -173,47 +134,7 @@ Gui,Destroy
 Return
 
 MenuHandlerKo:
-Gui, helpKo: Destroy 	; Gui New does NOT replace an existing window of the same name; without this, windows accumulate
-Gui, helpKo: New
-If( !A_IsCompiled && FileExist(A_ScriptDir . "\frog face icon 3.ico")) {
-	Gui, helpKo: Add , Picture, w40 h40, %A_ScriptDir%\frog face icon 3.ico
-} else {
-	Gui, helpKo: Add , Picture, icon1, %A_WorkingDir%\FrogControl.exe
-}
-Gui, helpKo:Font,s15
-Gui, helpKo:Add,Text,x+10 yp+10, % "프로그 컨트롤(FrogControl) 도움말"
-Gui, helpKo:Font
-Gui, helpKo:Add,Text,xm, % "단축키 목록"
-Gui, helpKo:Font, , Consolas
-Gui, helpKo: Add, ListView, r25 w1111, Hotkey|Action
-if (!FileExist(A_ScriptDir . "\shortcut list-ko.txt"))
-	LV_Add("", "(file not found)", A_ScriptDir . "\shortcut list-ko.txt")
-Loop, read, %A_ScriptDir%\shortcut list-ko.txt
-{
-	inLine_1 := ""
-	inLine_2 := ""
-	Loop, parse, A_LoopReadLine, %A_Tab%
-	{
-		inLine_%A_Index% := A_LoopField
-	}
-	LV_Add("", inLine_1, inLine_2)
-}
-LV_ModifyCol()  ; Auto-size each column to fit its contents.
-
-Gui, helpKo:Font
-Gui, helpKo: Add, Text,,
-Gui, helpKo:Add,Text,xm, % "Version " AppVersion " (" AppUpdateDate ")"
-Gui, helpKo: Add, Link, y+3, % "<a href=""" AppSite """>" AppSite "</a>"
-Gui, helpKo:Add,Text,x+10 yp+10,
-Gui, helpKo:Font
-Gui, helpKo:Add,Text,xm, % "제작자 : " AppAuthor
-Gui, helpKo: Add, Link, y+3, % "<a href=""mailto:" AppAuthorEmail """>" AppAuthorEmail "</a>"
-Gui, helpKo:Font
-Gui, helpKo:Add,Text,y+0,`t
-Gui, helpKo:Add,Button,GABOUTOK Default w75,&OK
-GuiControl, Focus, &OK
-Gui, helpKo: Show, , FrogControl Help
-FLAG_HELP_LANG := 2
+	ShowHelp("ko")
 Return
 
 RemoveToolTip:
@@ -302,39 +223,23 @@ return
 ;; sound control with mouse and Control + Shift
 #WheelUp::
 #]::
-	SoundSet +10
-	SoundGet, master_volume
-	master_volume := round(master_volume)
-	ToolTip volume: %master_volume%
-	SetTimer, RemoveToolTip, % SETTING_CONSTANT_TOOLTIPDUR_S
+	Volume_Adjust("+10")
 return
 
 #WheelDown::
 #[::
-	SoundSet -10
-	SoundGet, master_volume
-	master_volume := round(master_volume)
-	ToolTip volume: %master_volume%
-	SetTimer, RemoveToolTip, % SETTING_CONSTANT_TOOLTIPDUR_S
+	Volume_Adjust("-10")
 return
 
 ;; sound micro control with mouse and Control + Shift + Alt
 #^WheelUp:: 	;  Alt-Win + Wheel + Alt-Whin will trigger this hotkey but also will open Window Start!
 #^]::
-	SoundSet +1
-	SoundGet, master_volume
-	master_volume := round(master_volume)
-	ToolTip volume: %master_volume%
-	SetTimer, RemoveToolTip, % SETTING_CONSTANT_TOOLTIPDUR_S
+	Volume_Adjust("+1")
 Return
 
 #^WheelDown::
 #^[::
-	SoundSet -1
-	SoundGet, master_volume
-	master_volume := round(master_volume)
-	ToolTip volume: %master_volume%
-	SetTimer, RemoveToolTip, % SETTING_CONSTANT_TOOLTIPDUR_S
+	Volume_Adjust("-1")
 Return
 
 ;; to close a tab (like Ctrl + W) by Control + Shift + Right Click
@@ -357,9 +262,12 @@ return
 ;; while the original active window will be still active
 ^+!RButton::
 	MouseGetPos, , , mousewin
+	if (!mousewin)
+		Return
 	WinActivate, ahk_id %mousewin%
-	WinWaitActive, ahk_id %mousewin%
-	SendEvent, !{F4}
+	WinWaitActive, ahk_id %mousewin%, , 0.5 	; timeout: without it this thread could wait forever
+	if (!ErrorLevel)
+		SendEvent, !{F4}
 Return
 
 #^+!RButton::
@@ -1039,148 +947,7 @@ Return
 +F2::
 ;CapsLock & 2::
 ; When it's only F4, it's a problem on Excel.
-	SysGet, monitor_no, MonitorCount	
-	SysGet, monitor_no_prm, MonitorPrimary
-	Loop, %monitor_no% {
-	    SysGet, Monitor_%A_Index%_, Monitor, %A_Index%	; monitor_%A_Index%_workarea_ 뒤에 접미사로 left, right, top, bottom이 붙어서 이미 변수 할당이 SysGet에 의해서 자동으로 되는 듯. https://www.autohotkey.com/docs/commands/SysGet.htm#MonitorCount
-	    SysGet, Monitor_%A_Index%_WorkArea_, MonitorWorkArea, %A_Index%
-		monitor_%A_Index%_workarea_width := monitor_%A_Index%_workarea_right - monitor_%A_Index%_workarea_left 	
-		monitor_%A_Index%_workarea_height := monitor_%A_Index%_workarea_bottom - monitor_%A_Index%_workarea_top
-		monitor_%A_Index%_workarea_ratio := monitor_%A_Index%_workarea_height/monitor_%A_Index%_workarea_width
-		monitor_%A_Index%_workarea_center_x := (monitor_%A_Index%_workarea_right + monitor_%A_Index%_workarea_left)/2
-		monitor_%A_Index%_workarea_center_y := (monitor_%A_Index%_workarea_bottom + monitor_%A_Index%_workarea_top)/2
-		monitor_%A_Index%_grid_no_x := monitor_%A_Index%_workarea_width // 800 		; the numbers of grid along with x axis. 1920/2 = 960, 2560/3 = 853, 1920/800 = 2.xx, 2560/800 = 3.xx, 3840/800 = 4.8
-		monitor_%A_Index%_grid_no_y := monitor_%A_Index%_workarea_height // 450 	; the numbers of grid along with y axis. 1080/2 = 540, 1440/3 = 480, 1080/450 = 2.xx, 1440/450 = 3.xx, 2160/450 = 4.8
-		monitor_%A_Index%_grid_no_xy := monitor_%A_Index%_grid_no_x * monitor_%A_Index%_grid_no_y 			; the numbers of grids
-		monitor_%A_Index%_grid_width := monitor_%A_Index%_workarea_width / monitor_%A_Index%_grid_no_x 		; width of a grid
-		monitor_%A_Index%_grid_height := monitor_%A_Index%_workarea_height / monitor_%A_Index%_grid_no_y 	; height of a grid
-	}
-
-	AltTab_window_list()
-
-	AltTab_ID_List_FileExplorer_0 := 0
-
-	; Creating AltTab_ID_List_FileExplorer_%A_Index%. i.e., a ID list of File Explorers
-	Loop, %AltTab_ID_List_0% {
-		WinGetClass, temp_className, % "ahk_id " AltTab_ID_List_%A_index%
-		if temp_className not in CabinetWClass, ExploreWClass
-			Continue
-		AltTab_ID_List_FileExplorer_0 ++
-		AltTab_ID_List_FileExplorer_%AltTab_ID_List_FileExplorer_0% := AltTab_ID_List_%A_index%
-		AltTab_ID_List_FileExplorer_%AltTab_ID_List_FileExplorer_0%_momIndex := A_Index
-	}
-
-	; To send all File Explorers to the bottom if they are on the top currently
-	WinGetClass, class_currentActive, A
-	if class_currentActive in CabinetWClass, ExploreWClass 	; 
-	{
-		WinGet, activeWin_ID, ID, A
-		Loop, %AltTab_ID_List_FileExplorer_0% {
-			if (AltTab_ID_List_FileExplorer_%A_Index% = activeWin_ID) { 	; If there is a File Explorer with TOPMOST, then the current window may not be AltTab_ID_List_FileExplorer_1
-				activeWin_momIndex := AltTab_ID_List_FileExplorer_%A_Index%_momIndex
-				activeWin_FExpIndex := A_Index
-				activeWin_FExpIndex_nexts := A_Index + 1
-				if (AltTab_ID_List_FileExplorer_%activeWin_FExpIndex_nexts%_momIndex = activeWin_momIndex + 1) { ; if the next window after the current active File Explorer is another File Explorer, we keep the current File Explorer and send the others back.
-					Loop, %AltTab_ID_List_FileExplorer_0% {
-						if (A_Index = activeWin_FExpIndex)
-							Continue
-						WinSet, Bottom, , % "ahk_id " AltTab_ID_List_FileExplorer_%A_Index%	
-
-					}
-				} else {
-					Loop, %AltTab_ID_List_FileExplorer_0% {
-						WinSet, Bottom, , % "ahk_id " AltTab_ID_List_FileExplorer_%A_Index%
-						if (AltTab_ID_List_FileExplorer_%A_Index% = activeWin_ID) { 	; If there is a File Explorer with TOPMOST, then the current window may not be AltTab_ID_List_FileExplorer_1
-							activeWin_FExpIndex := A_Index
-							activeWin_momIndex := AltTab_ID_List_FileExplorer_%A_Index%_momIndex
-							Loop, {
-								activeWin_FExpIndex_nexts := activeWin_FExpIndex + A_Index
-								if (AltTab_ID_List_FileExplorer_%activeWin_FExpIndex_nexts%_momIndex != activeWin_momIndex + A_Index) {
-									toActivate := activeWin_momIndex + A_Index
-									WinActivate, % "ahk_id " AltTab_ID_List_%toActivate%
-									break
-								}
-							}
-						}
-					}
-				}
-				Break
-			}
-		}
-	}
-
-
-
-	; When there is no File Explorer.
-	else if (AltTab_ID_List_FileExplorer_0 < 1) {
-		Run, Explorer
-	} 
-
-	; putting windows
-	else { 	; putting windows only on the primary screen
-		Loop, %AltTab_ID_List_FileExplorer_0% {
-			; first unminimize or unmaximize all File Explorers in order to prevent WinMove from not working, and in order to get proper width and height.
-			WinRestore, % "ahk_id " AltTab_ID_List_FileExplorer_%A_Index%
-
-			index1 := A_Index
-			WinGetPos, temp_x, temp_y, temp_w, temp_h, % "ahk_id " AltTab_ID_List_FileExplorer_%index1%
-			; It's needed to spread windows across all monitors
-			loop, %monitor_no% {
-				if (monitor_%A_Index%_left <= temp_x + temp_w/2) and (temp_x + temp_w/2 <= monitor_%A_Index%_right - 1) and (monitor_%A_Index%_top <= temp_y + temp_h/2) and (temp_y + temp_h/2 <= monitor_%A_Index%_bottom - 1) {		; monitors' lefts and rights are like 0 ~ 2560, -1920 ~ 0.
-					AltTab_ID_List_FileExplorer_%index1%_mon := A_Index 	; (was indexing with ..._0, which always wrote to the last explorer's slot)
-					AltTab_ID_List_FileExplorer_inMon_%A_Index%_all_w += temp_w 	; Sum of widths of all File Explorers in each monitor
-					AltTab_ID_List_FileExplorer_inMon_%A_Index%_all_h += temp_h 	; Sum of heights of all File Explorers in each monitor
-				}
-			}
-		}
-		if (AltTab_ID_List_FileExplorer_0 > monitor_%monitor_no_prm%_grid_no_xy) {
-			; to create more grid
-			Loop, {
-				Loop, {
-					monitor_%monitor_no_prm%_grid_no_x ++
-					monitor_%monitor_no_prm%_grid_no_xy := monitor_%monitor_no_prm%_grid_no_x * monitor_%monitor_no_prm%_grid_no_y
-					monitor_%monitor_no_prm%_grid_width := monitor_%monitor_no_prm%_workarea_width / monitor_%monitor_no_prm%_grid_no_x
-					break
-				}
-				if (AltTab_ID_List_FileExplorer_0 <= monitor_%monitor_no_prm%_grid_no_xy) {
-					break
-				}
-				monitor_%monitor_no_prm%_grid_no_y ++
-				monitor_%monitor_no_prm%_grid_no_xy := monitor_%monitor_no_prm%_grid_no_x * monitor_%monitor_no_prm%_grid_no_y
-				monitor_%monitor_no_prm%_grid_height := monitor_%monitor_no_prm%_workarea_height / monitor_%monitor_no_prm%_grid_no_y
-				if (AltTab_ID_List_FileExplorer_0 <= monitor_%monitor_no_prm%_grid_no_xy) {
-					break
-				}
-			}
-		}
-		counter := 0
-		isLoopDone := 0
-		counterRvs := AltTab_ID_List_FileExplorer_0
-
-		lastFExp_gridX := Ceil(AltTab_ID_List_FileExplorer_0 / monitor_%monitor_no_prm%_grid_no_y)
-		lastFExp_gridY := Mod(AltTab_ID_List_FileExplorer_0, monitor_%monitor_no_prm%_grid_no_y) = 0 ? monitor_%monitor_no_prm%_grid_no_y : Mod(AltTab_ID_List_FileExplorer_0, monitor_%monitor_no_prm%_grid_no_y)
-
-		stillEmptyLoop := 1
-		Loop, % lastFExp_gridX {
-			loop_1_indexRev := lastFExp_gridX - A_Index + 1
-			
-			Loop, % monitor_%monitor_no_prm%_grid_no_y {
-				loop_2_indexRev := monitor_%monitor_no_prm%_grid_no_y - A_Index + 1
-				if ((loop_2_indexRev > lastFExp_gridY) and (stillEmptyLoop = 1)) {
-					Continue
-				}
-				stillEmptyLoop := 0
-				WinMove, % "ahk_id " AltTab_ID_List_FileExplorer_%counterRvs%, 	, monitor_%monitor_no_prm%_workarea_left + monitor_%monitor_no_prm%_grid_width * (loop_1_indexRev - 1)
-																				, monitor_%monitor_no_prm%_workarea_top + monitor_%monitor_no_prm%_grid_height * (loop_2_indexRev - 1)
-																				, monitor_%monitor_no_prm%_grid_width
-																				, monitor_%monitor_no_prm%_grid_height
-				WinSet, AlwaysOnTop, On, % "ahk_id " AltTab_ID_List_FileExplorer_%counterRvs%
-				WinSet, AlwaysOnTop, Off, % "ahk_id " AltTab_ID_List_FileExplorer_%counterRvs%
-				counterRvs --
-			}
-		} 
-		WinActivate, % "ahk_id " AltTab_ID_List_FileExplorer_1
-	}
+	Show_Windows("Explorer.exe", "", 1) 	; grid mode - the old ~145-line Explorer-only implementation was superseded by Show_Windows()
 Return
 
 
@@ -1192,690 +959,7 @@ Return
 ;F3::
 +F1::
 ;CapsLock & F3::
-	SysGet, monitor_no, MonitorCount	
-	SysGet, monitor_no_prm, MonitorPrimary
-	Loop, %monitor_no% {
-	    SysGet, Monitor_%A_Index%_, Monitor, %A_Index%
-	    SysGet, Monitor_%A_Index%_WorkArea_, MonitorWorkArea, %A_Index%
-		monitor_%A_Index%_workarea_width := monitor_%A_Index%_workarea_right - monitor_%A_Index%_workarea_left
-		monitor_%A_Index%_workarea_height := monitor_%A_Index%_workarea_bottom - monitor_%A_Index%_workarea_top
-		monitor_%A_Index%_workarea_ratio := monitor_%A_Index%_workarea_height/monitor_%A_Index%_workarea_width
-		monitor_%A_Index%_workarea_center_x := (monitor_%A_Index%_workarea_right + monitor_%A_Index%_workarea_left)/2
-		monitor_%A_Index%_workarea_center_y := (monitor_%A_Index%_workarea_bottom + monitor_%A_Index%_workarea_top)/2
-		monitor_%A_Index%_grid_no_x := monitor_%A_Index%_workarea_width // 800 		; the numbers of grid along with x axis. 1920/2 = 960, 2560/3 = 853, 1920/800 = 2.xx, 2560/800 = 3.xx, 3840/800 = 4.8
-		monitor_%A_Index%_grid_no_y := monitor_%A_Index%_workarea_height // 450 	; the numbers of grid along with y axis. 1080/2 = 540, 1440/3 = 480, 1080/450 = 2.xx, 1440/450 = 3.xx, 2160/450 = 4.8
-		monitor_%A_Index%_grid_no_xy := monitor_%A_Index%_grid_no_x * monitor_%A_Index%_grid_no_y 			; the numbers of grids
-		monitor_%A_Index%_grid_width := monitor_%A_Index%_workarea_width / monitor_%A_Index%_grid_no_x 		; width of a grid
-		monitor_%A_Index%_grid_height := monitor_%A_Index%_workarea_height / monitor_%A_Index%_grid_no_y 	; height of a grid
-	}
-
-
-	AltTab_window_list()
-
-	AltTab_ID_List_FileExplorer_0 := 0
-	AltTab_ID_List_FileExplorer_all_w := 0 	; Sum of widths of all File Explorers across all monitors
-	AltTab_ID_List_FileExplorer_all_h := 0 	; Sum of heights of all File Explorers across all monitors
-	AltTab_ID_List_FileExplorer_max_w := 0
-	AltTab_ID_List_FileExplorer_max_h := 0
-	Loop, %monitor_no% {
-		AltTab_ID_List_FileExplorer_inMon_%A_Index%_all_w := 0 	; Sum of widths of all File Explorers in each monitor
-		AltTab_ID_List_FileExplorer_inMon_%A_Index%_all_h := 0 	; Sum of heights of all File Explorers in each monitor
-	}
-
-	; Creating AltTab_ID_List_FileExplorer_%A_Index%. i.e., a ID list of File Explorers
-	Loop, %AltTab_ID_List_0% {
-		WinGetClass, temp_className, % "ahk_id " AltTab_ID_List_%A_index%
-		if temp_className not in CabinetWClass, ExploreWClass
-			Continue
-		AltTab_ID_List_FileExplorer_0 ++
-		AltTab_ID_List_FileExplorer_%AltTab_ID_List_FileExplorer_0% := AltTab_ID_List_%A_index%
-		AltTab_ID_List_FileExplorer_%AltTab_ID_List_FileExplorer_0%_momIndex := A_Index
-	}
-
-	; To send all File Explorers to the bottom if they are on the top currently
-	WinGetClass, class_currentActive, A
-	if class_currentActive in CabinetWClass, ExploreWClass 	; 
-	{
-		WinGet, activeWin_ID, ID, A
-		Loop, %AltTab_ID_List_FileExplorer_0% {
-			if (AltTab_ID_List_FileExplorer_%A_Index% = activeWin_ID) { 	; If there is a File Explorer with TOPMOST, then the current window may not be AltTab_ID_List_FileExplorer_1
-				activeWin_momIndex := AltTab_ID_List_FileExplorer_%A_Index%_momIndex
-				activeWin_FExpIndex := A_Index
-				activeWin_FExpIndex_nexts := A_Index + 1
-				if (AltTab_ID_List_FileExplorer_%activeWin_FExpIndex_nexts%_momIndex = activeWin_momIndex + 1) { ; if the next window after the current active File Explorer is another File Explorer, we keep the current File Explorer and send the others back.
-					Loop, %AltTab_ID_List_FileExplorer_0% {
-						if (A_Index = activeWin_FExpIndex)
-							Continue
-						WinSet, Bottom, , % "ahk_id " AltTab_ID_List_FileExplorer_%A_Index%	
-
-					}
-				} else {
-					Loop, %AltTab_ID_List_FileExplorer_0% {
-						WinSet, Bottom, , % "ahk_id " AltTab_ID_List_FileExplorer_%A_Index%
-						if (AltTab_ID_List_FileExplorer_%A_Index% = activeWin_ID) { 	; If there is a File Explorer with TOPMOST, then the current window may not be AltTab_ID_List_FileExplorer_1
-							activeWin_FExpIndex := A_Index
-							activeWin_momIndex := AltTab_ID_List_FileExplorer_%A_Index%_momIndex
-							Loop, {
-								activeWin_FExpIndex_nexts := activeWin_FExpIndex + A_Index
-								if (AltTab_ID_List_FileExplorer_%activeWin_FExpIndex_nexts%_momIndex != activeWin_momIndex + A_Index) {
-									toActivate := activeWin_momIndex + A_Index
-									WinActivate, % "ahk_id " AltTab_ID_List_%toActivate%
-									break
-								}
-							}
-						}
-					}
-				}
-				Break
-			}
-		}
-	}
-
-	; When there is no File Explorer.
-	else if (AltTab_ID_List_FileExplorer_0 < 1) {
-		Run, Explorer
-	} 
-
-	; putting windows
-	else { 	; putting windows only on the primary screen
-
-		; to get coordinates and measures of File Explorer (should be in the else statement.)
-		Loop, %AltTab_ID_List_FileExplorer_0% { 
-			; first unminimize or unmaximize all File Explorers in order to prevent WinMove from not working, and in order to get proper width and height.
-			WinRestore, % "ahk_id " AltTab_ID_List_FileExplorer_%A_Index% 	; this is the problem.
-
-			WinGetPos, temp_x, temp_y, temp_w, temp_h, % "ahk_id " AltTab_ID_List_FileExplorer_%A_Index%
-			AltTab_ID_List_FileExplorer_%A_Index%_x := temp_x  
-			AltTab_ID_List_FileExplorer_%A_Index%_y := temp_y
-			AltTab_ID_List_FileExplorer_%A_Index%_w := temp_w
-			AltTab_ID_List_FileExplorer_%A_Index%_h := temp_h  
-			AltTab_ID_List_FileExplorer_all_w += temp_w
-			AltTab_ID_List_FileExplorer_all_h += temp_h
-			if (AltTab_ID_List_FileExplorer_max_w < temp_w) {
-				AltTab_ID_List_FileExplorer_max_w := temp_w
-			}
-			if (AltTab_ID_List_FileExplorer_max_h < temp_h) {
-				AltTab_ID_List_FileExplorer_max_h := temp_h
-			}
-			
-			index := A_Index
-			; It's needed to spread windows across all monitors 
-			loop, %monitor_no% {
-				if (monitor_%A_Index%_left <= temp_x + temp_w/2) and (temp_x + temp_w/2 <= monitor_%A_Index%_right - 1) and (monitor_%A_Index%_top <= temp_y + temp_h/2) and (temp_y + temp_h/2 <= monitor_%A_Index%_bottom - 1) {		; monitors' lefts and rights are like 0 ~ 2560, -1920 ~ 0.
-					AltTab_ID_List_FileExplorer_%index%_mon := A_Index
-					AltTab_ID_List_FileExplorer_inMon_%A_Index%_all_w += temp_w 	; Sum of widths of all File Explorers in each monitor
-					AltTab_ID_List_FileExplorer_inMon_%A_Index%_all_h += temp_h 	; Sum of heights of all File Explorers in each monitor
-				}
-			}
-		}
-
-
-		if (AltTab_ID_List_FileExplorer_all_w <= monitor_%monitor_no_prm%_workarea_width) { 	; Putting horizontally. (instead of monitor_%A_Index%_workarea_width)
-			; putting horizontally all together
-			spreadFExp_left := monitor_%monitor_no_prm%_workarea_center_x - AltTab_ID_List_FileExplorer_all_w/2
-			spreadFExp_top := monitor_%monitor_no_prm%_workarea_center_y - AltTab_ID_List_FileExplorer_max_h/2
-			Loop, % AltTab_ID_List_FileExplorer_0 {
-				temp_index := AltTab_ID_List_FileExplorer_0 - A_Index + 1
-				WinMove, % "ahk_id " AltTab_ID_List_FileExplorer_%temp_index%, , spreadFExp_left, spreadFExp_top
-				WinSet, AlwaysOnTop, On, % "ahk_id " AltTab_ID_List_FileExplorer_%temp_index%
-				WinSet, AlwaysOnTop, Off, % "ahk_id " AltTab_ID_List_FileExplorer_%temp_index%
-				WinActivate, % "ahk_id " AltTab_ID_List_FileExplorer_%temp_index%
-				spreadFExp_left += AltTab_ID_List_FileExplorer_%temp_index%_w
-			}
-		} else if (AltTab_ID_List_FileExplorer_all_h <= monitor_%monitor_no_prm%_workarea_height) { 	; putting vertically all together
-			spreadFExp_left := monitor_%monitor_no_prm%_workarea_center_x - AltTab_ID_List_FileExplorer_max_w/2
-			spreadFExp_top := monitor_%monitor_no_prm%_workarea_center_y - AltTab_ID_List_FileExplorer_all_h/2
-			Loop, % AltTab_ID_List_FileExplorer_0 {
-				temp_index := AltTab_ID_List_FileExplorer_0 - A_Index + 1
-				WinMove, % "ahk_id " AltTab_ID_List_FileExplorer_%temp_index%, , spreadFExp_left, spreadFExp_top
-				;DllCall("MoveWindow", UInt, AltTab_ID_List_FileExplorer_%temp_index%, UInt, spreadFExpEach_x, UInt, spreadFExpEach_y, UInt, AltTab_ID_List_FileExplorer_%temp_index%_w, UInt, AltTab_ID_List_FileExplorer_%temp_index%_h, Int, 1)
-				WinSet, AlwaysOnTop, On, % "ahk_id " AltTab_ID_List_FileExplorer_%temp_index%
-				WinSet, AlwaysOnTop, Off, % "ahk_id " AltTab_ID_List_FileExplorer_%temp_index%
-				WinActivate, % "ahk_id " AltTab_ID_List_FileExplorer_%temp_index%
-				spreadFExp_top += AltTab_ID_List_FileExplorer_%temp_index%_h
-			}
-		} else if ((monitor_%monitor_no_prm%_grid_no_x <= 1) or (monitor_%monitor_no_prm%_grid_no_y <= 1)) {  	; in case the screen is so narrow
-			; putting diagonally, overlapping
-			spreadFExp_left := monitor_%monitor_no_prm%_workarea_left
-			spreadFExp_top := monitor_%monitor_no_prm%_workarea_top
-			spreadFExp_end_x := monitor_%monitor_no_prm%_workarea_right - AltTab_ID_List_FileExplorer_1_w		; The top one will be right down corner and top
-			spreadFExp_end_y := monitor_%monitor_no_prm%_workarea_bottom - AltTab_ID_List_FileExplorer_1_h 	; The top one will be right down corner and top
-			spreadFExp_step_width := (spreadFExp_end_x - spreadFExp_left) / (AltTab_ID_List_FileExplorer_0 - 1)
-			spreadFExp_step_height := (spreadFExp_end_y - spreadFExp_top) /(AltTab_ID_List_FileExplorer_0 - 1)
-			Loop, % AltTab_ID_List_FileExplorer_0 {
-				temp_index := AltTab_ID_List_FileExplorer_0 - A_Index + 1
-				spreadFExpEach_x := spreadFExp_left + spreadFExp_step_width * (A_Index - 1)
-				spreadFExpEach_y := spreadFExp_top + spreadFExp_step_height * (A_Index - 1)
-				WinMove, % "ahk_id " AltTab_ID_List_FileExplorer_%temp_index%, , spreadFExpEach_x, spreadFExpEach_y 	; When SetWinDelay, -1 is declared, WinMove is as fast as DllCall("MoveWindow".. .
-				;DllCall("MoveWindow", UInt, AltTab_ID_List_FileExplorer_%temp_index%, UInt, spreadFExpEach_x, UInt, spreadFExpEach_y, UInt, AltTab_ID_List_FileExplorer_%temp_index%_w, UInt, AltTab_ID_List_FileExplorer_%temp_index%_h, Int, 1)
-				WinSet, AlwaysOnTop, On, % "ahk_id " AltTab_ID_List_FileExplorer_%temp_index%
-				WinSet, AlwaysOnTop, Off, % "ahk_id " AltTab_ID_List_FileExplorer_%temp_index%
-			}
-			WinActivate, % "ahk_id " AltTab_ID_List_FileExplorer_1
-		} else if (AltTab_ID_List_FileExplorer_0 = 3) {
-			Loop, %AltTab_ID_List_FileExplorer_0% {
-				AltTab_ID_List_FileExplorer_%A_Index%_w_norm := AltTab_ID_List_FileExplorer_%A_Index%_w*monitor_%monitor_no_prm%_workarea_ratio
-				AltTab_ID_List_FileExplorer_%A_Index%_h_norm := AltTab_ID_List_FileExplorer_%A_Index%_h
-				AltTab_ID_List_FileExplorer_sortDsc_w_norm_%A_Index% := AltTab_ID_List_FileExplorer_%A_Index%_w_norm 	; preparation for sorting
-				AltTab_ID_List_FileExplorer_sortDsc_h_norm_%A_Index% := AltTab_ID_List_FileExplorer_%A_Index%_h_norm	; preparation for sorting
-				AltTab_ID_List_FileExplorer_sortDsc_w_norm_%A_Index%_ID := AltTab_ID_List_FileExplorer_%A_Index%  		; preparation for sorting - assigning ID
-				AltTab_ID_List_FileExplorer_sortDsc_h_norm_%A_Index%_ID := AltTab_ID_List_FileExplorer_%A_Index%  		; preparation for sorting - assigning ID
-			}
-
-			; to sort
-			Loop, % AltTab_ID_List_FileExplorer_0 - 1 {
-				Loop, % AltTab_ID_List_FileExplorer_0 - A_Index {
-					nextIndex := A_Index + 1
-					if (AltTab_ID_List_FileExplorer_sortDsc_w_norm_%A_Index% < AltTab_ID_List_FileExplorer_sortDsc_w_norm_%nextIndex%) {
-						swap := AltTab_ID_List_FileExplorer_sortDsc_w_norm_%A_Index%
-						AltTab_ID_List_FileExplorer_sortDsc_w_norm_%A_Index% := AltTab_ID_List_FileExplorer_sortDsc_w_norm_%nextIndex%
-						AltTab_ID_List_FileExplorer_sortDsc_w_norm_%nextIndex% := swap
-						swap := AltTab_ID_List_FileExplorer_sortDsc_w_norm_%A_Index%_ID 														; assigning ID
-						AltTab_ID_List_FileExplorer_sortDsc_w_norm_%A_Index%_ID := AltTab_ID_List_FileExplorer_sortDsc_w_norm_%nextIndex%_ID 	; assigning ID
-						AltTab_ID_List_FileExplorer_sortDsc_w_norm_%nextIndex%_ID := swap  														; assigning ID
-					}
-					if (AltTab_ID_List_FileExplorer_sortDsc_h_norm_%A_Index% < AltTab_ID_List_FileExplorer_sortDsc_h_norm_%nextIndex%) {
-						swap := AltTab_ID_List_FileExplorer_sortDsc_h_norm_%A_Index%
-						AltTab_ID_List_FileExplorer_sortDsc_h_norm_%A_Index% := AltTab_ID_List_FileExplorer_sortDsc_h_norm_%nextIndex%
-						AltTab_ID_List_FileExplorer_sortDsc_h_norm_%nextIndex% := swap
-						swap := AltTab_ID_List_FileExplorer_sortDsc_h_norm_%A_Index%_ID 														; assigning ID
-						AltTab_ID_List_FileExplorer_sortDsc_h_norm_%A_Index%_ID := AltTab_ID_List_FileExplorer_sortDsc_h_norm_%nextIndex%_ID 	; assigning ID
-						AltTab_ID_List_FileExplorer_sortDsc_h_norm_%nextIndex%_ID := swap  														; assigning ID
-					}
-				}
-			}
-				
-			Loop, % AltTab_ID_List_FileExplorer_0 {
-				WinGetPos, temp_x, temp_y, temp_w, temp_h, % "ahk_id " AltTab_ID_List_FileExplorer_sortDsc_w_norm_%A_Index%_ID
-				;AltTab_ID_List_FileExplorer_sortDsc_w_norm_%A_Index%_x := temp_x*monitor_%monitor_no_prm%_workarea_ratio
-				AltTab_ID_List_FileExplorer_sortDsc_w_norm_%A_Index%_y := temp_y
-				AltTab_ID_List_FileExplorer_sortDsc_w_norm_%A_Index%_w := temp_w*monitor_%monitor_no_prm%_workarea_ratio 	; Actually AltTab_ID_List_FileExplorer_sortDsc_w_norm_%A_Index% = AltTab_ID_List_FileExplorer_sortDsc_w_norm_%A_Index%_w
-				AltTab_ID_List_FileExplorer_sortDsc_w_norm_%A_Index%_h := temp_h
-				WinGetPos, temp_x, temp_y, temp_w, temp_h, % "ahk_id " AltTab_ID_List_FileExplorer_sortDsc_h_norm_%A_Index%_ID
-				;AltTab_ID_List_FileExplorer_sortDsc_h_norm_%A_Index%_x := temp_x*monitor_%monitor_no_prm%_workarea_ratio
-				AltTab_ID_List_FileExplorer_sortDsc_h_norm_%A_Index%_y := temp_y
-				AltTab_ID_List_FileExplorer_sortDsc_h_norm_%A_Index%_w := temp_w*monitor_%monitor_no_prm%_workarea_ratio 	
-				AltTab_ID_List_FileExplorer_sortDsc_h_norm_%A_Index%_h := temp_h	; Actually AltTab_ID_List_FileExplorer_sortDsc_h_norm_%A_Index% = AltTab_ID_List_FileExplorer_sortDsc_h_norm_%A_Index%_w
-			}
-			;;;;;;;;;;;;;;;;;;;;;;;;;; sorting is done.
-
-
-			if (AltTab_ID_List_FileExplorer_sortDsc_w_norm_1 > AltTab_ID_List_FileExplorer_sortDsc_h_norm_1) { 	; horizontal max is bigger than vertical max (in normalized values)
-
-				FExpStack_bottomFExp := AltTab_ID_List_FileExplorer_sortDsc_w_norm_1_ID
-				FExpStack_bottomFExp_w_norm := AltTab_ID_List_FileExplorer_sortDsc_w_norm_1_w
-				FExpStack_bottomFExp_h_norm := AltTab_ID_List_FileExplorer_sortDsc_w_norm_1_h
-				FExpStack_leftFExp := ""
-				FExpStack_rightFExp := ""
-
-				sum_theOthers_w_norm := 0 	; sum of all the widths except the longest one.
-				Loop, % AltTab_ID_List_FileExplorer_0 - 1 {
-					nextIndex := A_Index + 1
-					sum_theOthers_w_norm += AltTab_ID_List_FileExplorer_sortDsc_w_norm_%nextIndex%
-				}
-				over_w_norm := sum_theOthers_w_norm - monitor_%monitor_no_prm%_workarea_width*monitor_%monitor_no_prm%_workarea_ratio > 0 ? sum_theOthers_w_norm - monitor_%monitor_no_prm%_workarea_width*monitor_%monitor_no_prm%_workarea_ratio : 0
-				horizontalLength_norm_net := sum_theOthers_w_norm - over_w_norm > AltTab_ID_List_FileExplorer_sortDsc_w_norm_1 ? sum_theOthers_w_norm - over_w_norm : AltTab_ID_List_FileExplorer_sortDsc_w_norm_1
-				horizontalLength_norm_net := horizontalLength_norm_net < monitor_%monitor_no_prm%_workarea_width ? horizontalLength_norm_net : monitor_%monitor_no_prm%_workarea_width 	; in case AltTab_ID_List_FileExplorer_sortDsc_w_norm_1 > monitor_%monitor_no_prm%_workarea_width
-
-				if (AltTab_ID_List_FileExplorer_sortDsc_w_norm_1_ID = AltTab_ID_List_FileExplorer_sortDsc_h_norm_1_ID) { 	; That window has the longest width and the longest height.
-					FExpStack_rightFExp := AltTab_ID_List_FileExplorer_sortDsc_h_norm_2_ID
-					FExpStack_rightFExp_w_norm := AltTab_ID_List_FileExplorer_sortDsc_h_norm_2_w
-					FExpStack_rightFExp_h_norm := AltTab_ID_List_FileExplorer_sortDsc_h_norm_2_h
-					FExpStack_leftFExp := AltTab_ID_List_FileExplorer_sortDsc_h_norm_3_ID
-					FExpStack_leftFExp_w_norm := AltTab_ID_List_FileExplorer_sortDsc_h_norm_3_w
-					FExpStack_leftFExp_h_norm := AltTab_ID_List_FileExplorer_sortDsc_h_norm_3_h
-
-					verticalLength := AltTab_ID_List_FileExplorer_sortDsc_w_norm_1_h + AltTab_ID_List_FileExplorer_sortDsc_h_norm_2_h
-					over_h := verticalLength - monitor_%monitor_no_prm%_workarea_height > 0 ? verticalLength - monitor_%monitor_no_prm%_workarea_height : 0
-					verticalLength_net := verticalLength - over_h
-
-;;;;;===================================00000000000000000000000000000
-				} else { 	; That window has the longest width but not the longest height.
-					FExpStack_rightFExp := AltTab_ID_List_FileExplorer_sortDsc_h_norm_1_ID
-					FExpStack_rightFExp_w_norm := AltTab_ID_List_FileExplorer_sortDsc_h_norm_1_w
-					FExpStack_rightFExp_h_norm := AltTab_ID_List_FileExplorer_sortDsc_h_norm_1_h
-					; to find the remaining ID which should be at the upper left position.
-					Loop, % AltTab_ID_List_FileExplorer_0 {
-						if ((AltTab_ID_List_FileExplorer_%A_Index% != FExpStack_rightFExp) and (AltTab_ID_List_FileExplorer_%A_Index% != FExpStack_bottomFExp)) {
-							FExpStack_leftFExp := AltTab_ID_List_FileExplorer_%A_Index%
-							FExpStack_leftFExp_w_norm := AltTab_ID_List_FileExplorer_%A_Index%_w_norm
-							FExpStack_leftFExp_h_norm := AltTab_ID_List_FileExplorer_%A_Index%_h_norm
-							Break
-						}
-					}
-
-					verticalLength := AltTab_ID_List_FileExplorer_sortDsc_w_norm_1_h + AltTab_ID_List_FileExplorer_sortDsc_h_norm_1_h
-					over_h := verticalLength - monitor_%monitor_no_prm%_workarea_height > 0 ? verticalLength - monitor_%monitor_no_prm%_workarea_height : 0
-					verticalLength_net := verticalLength - over_h
-
-				}
-;;;;;===================================00000000000000000000000000000
-				
-				if (((over_w_norm > 0) and !(over_h > 0)) or ((over_w_norm > 0) and (over_h > 0))) {
-					WinMove, % "ahk_id " FExpStack_leftFExp, , monitor_%monitor_no_prm%_workarea_left, monitor_%monitor_no_prm%_workarea_top
-					WinMove, % "ahk_id " FExpStack_bottomFExp, , monitor_%monitor_no_prm%_workarea_left, monitor_%monitor_no_prm%_workarea_bottom - FExpStack_bottomFExp_h_norm 	; FExpStack_bottomFExp = AltTab_ID_List_FileExplorer_sortDsc_w_norm_1_ID
-					FExpStack_rightFExp_yAdj := (AltTab_ID_List_FileExplorer_all_h - monitor_%monitor_no_prm%_workarea_height)/2 * 1.5 	; 1.5 is an adjustment ratio
-					WinMove, % "ahk_id " FExpStack_rightFExp, , monitor_%monitor_no_prm%_workarea_right - FExpStack_rightFExp_w_norm/monitor_%monitor_no_prm%_workarea_ratio, FExpStack_leftFExp_h_norm - FExpStack_rightFExp_yAdj
-				} else if (!(over_w_norm > 0) and (over_h > 0)) {
-					if ((FExpStack_leftFExp_h_norm + FExpStack_bottomFExp_h_norm) < monitor_%monitor_no_prm%_workarea_height) {
-						WinMove, % "ahk_id " FExpStack_leftFExp, , monitor_%monitor_no_prm%_workarea_right - (FExpStack_rightFExp_w_norm + FExpStack_leftFExp_w_norm)/monitor_%monitor_no_prm%_workarea_ratio, monitor_%monitor_no_prm%_workarea_bottom - FExpStack_bottomFExp_h_norm - FExpStack_leftFExp_h_norm
-					} else {
-						WinMove, % "ahk_id " FExpStack_leftFExp, , monitor_%monitor_no_prm%_workarea_right - (FExpStack_rightFExp_w_norm + FExpStack_leftFExp_w_norm)/monitor_%monitor_no_prm%_workarea_ratio, monitor_%monitor_no_prm%_workarea_top
-					}
-					WinMove, % "ahk_id " FExpStack_bottomFExp, , monitor_%monitor_no_prm%_workarea_left, monitor_%monitor_no_prm%_workarea_bottom - FExpStack_bottomFExp_h_norm 	; FExpStack_bottomFExp = AltTab_ID_List_FileExplorer_sortDsc_w_norm_1_ID
-					WinMove, % "ahk_id " FExpStack_rightFExp, , monitor_%monitor_no_prm%_workarea_right - FExpStack_rightFExp_w_norm/monitor_%monitor_no_prm%_workarea_ratio, monitor_%monitor_no_prm%_workarea_top
-				;} else if ((over_w_norm > 0) and (over_h > 0)) {
-				} else if (!(over_w_norm > 0) and !(over_h > 0)) {
-					;ToolTip, % "over_w_norm " over_w_norm " FExpStack_rightFExp_yAdj " FExpStack_rightFExp_yAdj 
-					spreadFExp_left := monitor_%monitor_no_prm%_workarea_center_x - horizontalLength_norm_net/monitor_%monitor_no_prm%_workarea_ratio/2
-					spreadFExp_top := monitor_%monitor_no_prm%_workarea_center_y - verticalLength_net/2
-					spreadFExp_right := spreadFExp_left + horizontalLength_norm_net/monitor_%monitor_no_prm%_workarea_ratio
-					spreadFExp_bottom := spreadFExp_top + verticalLength_net
-
-					WinMove, % "ahk_id " FExpStack_leftFExp, , spreadFExp_right - (FExpStack_rightFExp_w_norm + FExpStack_leftFExp_w_norm)/monitor_%monitor_no_prm%_workarea_ratio, spreadFExp_bottom - FExpStack_bottomFExp_h_norm - FExpStack_leftFExp_h_norm
-					WinMove, % "ahk_id " FExpStack_bottomFExp, , spreadFExp_left, spreadFExp_bottom - FExpStack_bottomFExp_h_norm 	; FExpStack_bottomFExp = AltTab_ID_List_FileExplorer_sortDsc_w_norm_1_ID
-					WinMove, % "ahk_id " FExpStack_rightFExp, , spreadFExp_right - FExpStack_rightFExp_w_norm/monitor_%monitor_no_prm%_workarea_ratio, spreadFExp_top
-				}
-				
-
-				WinSet, AlwaysOnTop, On, % "ahk_id " FExpStack_leftFExp
-				WinSet, AlwaysOnTop, Off, % "ahk_id " FExpStack_leftFExp
-				WinSet, AlwaysOnTop, On, % "ahk_id " FExpStack_rightFExp
-				WinSet, AlwaysOnTop, Off, % "ahk_id " FExpStack_rightFExp
-				WinSet, AlwaysOnTop, On, % "ahk_id " FExpStack_bottomFExp
-				WinSet, AlwaysOnTop, Off, % "ahk_id " FExpStack_bottomFExp
-				WinActivate, % "ahk_id " AltTab_ID_List_FileExplorer_1
-
-;;;;;===================================00000000000000000000000000000
-
-			} else { 	; vertical max is bigger than horizontal max
-				FExpStack_rightFExp := AltTab_ID_List_FileExplorer_sortDsc_h_norm_1_ID
-				FExpStack_rightFExp_h_norm := AltTab_ID_List_FileExplorer_sortDsc_h_norm_1_h
-				FExpStack_rightFExp_w_norm := AltTab_ID_List_FileExplorer_sortDsc_h_norm_1_w
-				FExpStack_topFExp := ""
-				FExpStack_bottomFExp := ""
-
-				sum_theOthers_h := 0 	; sum of all the widths except the longest one.
-				Loop, % AltTab_ID_List_FileExplorer_0 - 1 {
-					nextIndex := A_Index + 1
-					sum_theOthers_h += AltTab_ID_List_FileExplorer_sortDsc_h_norm_%nextIndex%
-				}
-				over_h := sum_theOthers_h - monitor_%monitor_no_prm%_workarea_height > 0 ? sum_theOthers_h - monitor_%monitor_no_prm%_workarea_height : 0
-				verticalLength_net := sum_theOthers_h - over_h > AltTab_ID_List_FileExplorer_sortDsc_h_norm_1 ? sum_theOthers_h - over_h : AltTab_ID_List_FileExplorer_sortDsc_h_norm_1
-				verticalLength_net := verticalLength_net < monitor_%monitor_no_prm%_workarea_height ? verticalLength_net : monitor_%monitor_no_prm%_workarea_height 	; in case AltTab_ID_List_FileExplorer_sortDsc_h_norm_1 > monitor_%monitor_no_prm%_workarea_height
-
-				if (AltTab_ID_List_FileExplorer_sortDsc_h_norm_1_ID = AltTab_ID_List_FileExplorer_sortDsc_w_norm_1_ID) { 	; That window has the longest width and the longest height.
-					FExpStack_bottomFExp := AltTab_ID_List_FileExplorer_sortDsc_w_norm_2_ID
-					FExpStack_bottomFExp_h_norm := AltTab_ID_List_FileExplorer_sortDsc_w_norm_2_h
-					FExpStack_bottomFExp_w_norm := AltTab_ID_List_FileExplorer_sortDsc_w_norm_2_w
-					FExpStack_topFExp := AltTab_ID_List_FileExplorer_sortDsc_w_norm_3_ID
-					FExpStack_topFExp_h_norm := AltTab_ID_List_FileExplorer_sortDsc_w_norm_3_h
-					FExpStack_topFExp_w_norm := AltTab_ID_List_FileExplorer_sortDsc_w_norm_3_w
-
-					horizontalLength_norm := AltTab_ID_List_FileExplorer_sortDsc_h_norm_1_w + AltTab_ID_List_FileExplorer_sortDsc_w_norm_2_w
-					over_w_norm := horizontalLength_norm - monitor_%monitor_no_prm%_workarea_width * monitor_%monitor_no_prm%_workarea_ratio > 0 ? horizontalLength_norm - monitor_%monitor_no_prm%_workarea_width * monitor_%monitor_no_prm%_workarea_ratio : 0
-					horizontalLength_norm_net := horizontalLength_norm - over_w_norm
-
-;;;;;===================================00000000000000000000000000000
-				} else { 	; That window has the longest width but not the longest height.
-					FExpStack_bottomFExp := AltTab_ID_List_FileExplorer_sortDsc_w_norm_1_ID
-					FExpStack_bottomFExp_h_norm := AltTab_ID_List_FileExplorer_sortDsc_w_norm_1_h
-					FExpStack_bottomFExp_w_norm := AltTab_ID_List_FileExplorer_sortDsc_w_norm_1_w
-					; to find the remaining ID which should be at the upper left position.
-					Loop, % AltTab_ID_List_FileExplorer_0 {
-						if ((AltTab_ID_List_FileExplorer_%A_Index% != FExpStack_bottomFExp) and (AltTab_ID_List_FileExplorer_%A_Index% != FExpStack_rightFExp)) {
-							FExpStack_topFExp := AltTab_ID_List_FileExplorer_%A_Index%
-							FExpStack_topFExp_h_norm := AltTab_ID_List_FileExplorer_%A_Index%_h_norm
-							FExpStack_topFExp_w_norm := AltTab_ID_List_FileExplorer_%A_Index%_w_norm
-							Break
-						}
-					}
-
-					horizontalLength_norm := AltTab_ID_List_FileExplorer_sortDsc_h_norm_1_w + AltTab_ID_List_FileExplorer_sortDsc_w_norm_1_w
-					over_w_norm := horizontalLength_norm - monitor_%monitor_no_prm%_workarea_width * monitor_%monitor_no_prm%_workarea_ratio > 0 ? horizontalLength_norm - monitor_%monitor_no_prm%_workarea_width * monitor_%monitor_no_prm%_workarea_ratio : 0
-					horizontalLength_norm_net := horizontalLength_norm - over_w_norm
-
-				}
-;;;;;===================================00000000000000000000000000000
-				
-				if (((over_h > 0) and !(over_w_norm > 0)) or ((over_h > 0) and (over_w_norm > 0))) {
-					WinMove, % "ahk_id " FExpStack_topFExp, , monitor_%monitor_no_prm%_workarea_left, monitor_%monitor_no_prm%_workarea_top
-					WinMove, % "ahk_id " FExpStack_rightFExp, , monitor_%monitor_no_prm%_workarea_right - FExpStack_rightFExp_w_norm / monitor_%monitor_no_prm%_workarea_ratio, monitor_%monitor_no_prm%_workarea_top
-					FExpStack_bottomFExp_xAdj := (AltTab_ID_List_FileExplorer_all_w - monitor_%monitor_no_prm%_workarea_width)/2 * 1.5 	; 1.5 is an adjustment ratio. It's not a normalized value
-					WinMove, % "ahk_id " FExpStack_bottomFExp, , FExpStack_topFExp_w_norm / monitor_%monitor_no_prm%_workarea_ratio - FExpStack_bottomFExp_xAdj, monitor_%monitor_no_prm%_workarea_bottom - FExpStack_bottomFExp_h_norm
-				} else if (!(over_h > 0) and (over_w_norm > 0)) {
-					if ((FExpStack_topFExp_w_norm + FExpStack_rightFExp_w_norm) < monitor_%monitor_no_prm%_workarea_width * monitor_%monitor_no_prm%_workarea_ratio) {
-						WinMove, % "ahk_id " FExpStack_topFExp, , monitor_%monitor_no_prm%_workarea_right - (FExpStack_rightFExp_w_norm + FExpStack_topFExp_w_norm) /  monitor_%monitor_no_prm%_workarea_ratio, monitor_%monitor_no_prm%_workarea_bottom - (FExpStack_bottomFExp_h_norm + FExpStack_topFExp_h_norm)
-					} else {
-						WinMove, % "ahk_id " FExpStack_topFExp, , monitor_%monitor_no_prm%_workarea_left, monitor_%monitor_no_prm%_workarea_bottom - (FExpStack_bottomFExp_h_norm + FExpStack_topFExp_h_norm)
-					}
-					WinMove, % "ahk_id " FExpStack_rightFExp, , monitor_%monitor_no_prm%_workarea_right - FExpStack_rightFExp_w_norm / monitor_%monitor_no_prm%_workarea_ratio, monitor_%monitor_no_prm%_workarea_top
-					WinMove, % "ahk_id " FExpStack_bottomFExp, , monitor_%monitor_no_prm%_workarea_left, monitor_%monitor_no_prm%_workarea_bottom - FExpStack_bottomFExp_h_norm
-				;} else if ((over_h > 0) and (over_w_norm > 0)) {
-				} else if (!(over_h > 0) and !(over_w_norm > 0)) {
-					;ToolTip, % "over_h " over_h " FExpStack_bottomFExp_xAdj " FExpStack_bottomFExp_xAdj 
-					spreadFExp_top := monitor_%monitor_no_prm%_workarea_center_y - verticalLength_net / 2
-					spreadFExp_left := monitor_%monitor_no_prm%_workarea_center_x - horizontalLength_norm_net / monitor_%monitor_no_prm%_workarea_ratio / 2 	; It's not a normalized value
-					spreadFExp_bottom := spreadFExp_top + verticalLength_net
-					spreadFExp_right := spreadFExp_left + horizontalLength_norm_net / monitor_%monitor_no_prm%_workarea_ratio
-
-					WinMove, % "ahk_id " FExpStack_topFExp, , spreadFExp_right - (FExpStack_rightFExp_w_norm + FExpStack_topFExp_w_norm) / monitor_%monitor_no_prm%_workarea_ratio, spreadFExp_bottom - (FExpStack_bottomFExp_h_norm + FExpStack_topFExp_h_norm)
-					WinMove, % "ahk_id " FExpStack_rightFExp, , spreadFExp_right - FExpStack_rightFExp_w_norm / monitor_%monitor_no_prm%_workarea_ratio, spreadFExp_top 	; (was spreadFExp_left — an X value pasted into the Y slot)
-					WinMove, % "ahk_id " FExpStack_bottomFExp, , spreadFExp_left, spreadFExp_bottom - FExpStack_bottomFExp_h_norm
-				}
-				
-
-				WinSet, AlwaysOnTop, On, % "ahk_id " FExpStack_topFExp
-				WinSet, AlwaysOnTop, Off, % "ahk_id " FExpStack_topFExp
-				WinSet, AlwaysOnTop, On, % "ahk_id " FExpStack_bottomFExp
-				WinSet, AlwaysOnTop, Off, % "ahk_id " FExpStack_bottomFExp
-				WinSet, AlwaysOnTop, On, % "ahk_id " FExpStack_rightFExp
-				WinSet, AlwaysOnTop, Off, % "ahk_id " FExpStack_rightFExp
-				WinActivate, % "ahk_id " AltTab_ID_List_FileExplorer_1
-
-;;;;;===================================00000000000000000000000000000
-			}
-		} else if (AltTab_ID_List_FileExplorer_0 = 4) {
-			;   (1,2)-(2,2)  1 - 2
-			;   (1,1)-(2,1)  4 - 3
-
-			; sort by height descending
-			; to sort AltTab_ID_List_FileExplorer_sortDsc_h_%A_Index%_h
-			Loop, %AltTab_ID_List_FileExplorer_0% {
-				AltTab_ID_List_FileExplorer_sortDsc_h_%A_Index%_h := AltTab_ID_List_FileExplorer_%A_Index%_h	; preparation for sorting
-				AltTab_ID_List_FileExplorer_sortDsc_h_%A_Index%_ID := AltTab_ID_List_FileExplorer_%A_Index%  		; preparation for sorting - assigning ID
-			}
-			Loop, % AltTab_ID_List_FileExplorer_0 - 1 {
-				Loop, % AltTab_ID_List_FileExplorer_0 - A_Index {
-					nextIndex := A_Index + 1
-					if (AltTab_ID_List_FileExplorer_sortDsc_h_%A_Index%_h < AltTab_ID_List_FileExplorer_sortDsc_h_%nextIndex%_h) {
-						swap := AltTab_ID_List_FileExplorer_sortDsc_h_%A_Index%_h
-						AltTab_ID_List_FileExplorer_sortDsc_h_%A_Index%_h := AltTab_ID_List_FileExplorer_sortDsc_h_%nextIndex%_h
-						AltTab_ID_List_FileExplorer_sortDsc_h_%nextIndex%_h := swap
-						swap := AltTab_ID_List_FileExplorer_sortDsc_h_%A_Index%_ID 														; assigning ID
-						AltTab_ID_List_FileExplorer_sortDsc_h_%A_Index%_ID := AltTab_ID_List_FileExplorer_sortDsc_h_%nextIndex%_ID 		; assigning ID
-						AltTab_ID_List_FileExplorer_sortDsc_h_%nextIndex%_ID := swap  													; assigning ID
-					}
-				}
-			}
-			Loop, % AltTab_ID_List_FileExplorer_0 {
-				WinGetPos, , , temp_w, , % "ahk_id " AltTab_ID_List_FileExplorer_sortDsc_h_%A_Index%_ID
-				AltTab_ID_List_FileExplorer_sortDsc_h_%A_Index%_w := temp_w 	
-			}
-			;;;;;;;;;;;;;;;;;;;;;;;;;; sorting is done.
-
-			; From now on, working with location-based windows
-			; initial setting: 4 windows (all edges) are all put together at the center of the screen
-			spreadFExp_4_1_1_ID := AltTab_ID_List_FileExplorer_sortDsc_h_4_ID
-			spreadFExp_4_1_1_w := AltTab_ID_List_FileExplorer_sortDsc_h_4_w
-			spreadFExp_4_1_1_h := AltTab_ID_List_FileExplorer_sortDsc_h_4_h
-			spreadFExp_4_1_1_x := monitor_%monitor_no_prm%_workarea_center_x - spreadFExp_4_1_1_w
-			spreadFExp_4_1_1_y := monitor_%monitor_no_prm%_workarea_center_y 
-
-			spreadFExp_4_2_1_ID := AltTab_ID_List_FileExplorer_sortDsc_h_3_ID
-			spreadFExp_4_2_1_w := AltTab_ID_List_FileExplorer_sortDsc_h_3_w
-			spreadFExp_4_2_1_h := AltTab_ID_List_FileExplorer_sortDsc_h_3_h
-			spreadFExp_4_2_1_x := monitor_%monitor_no_prm%_workarea_center_x
-			spreadFExp_4_2_1_y := monitor_%monitor_no_prm%_workarea_center_y
-
-			spreadFExp_4_1_2_ID := AltTab_ID_List_FileExplorer_sortDsc_h_1_ID
-			spreadFExp_4_1_2_w := AltTab_ID_List_FileExplorer_sortDsc_h_1_w
-			spreadFExp_4_1_2_h := AltTab_ID_List_FileExplorer_sortDsc_h_1_h
-			spreadFExp_4_1_2_x := monitor_%monitor_no_prm%_workarea_center_x - spreadFExp_4_1_2_w
-			spreadFExp_4_1_2_y := monitor_%monitor_no_prm%_workarea_center_y - spreadFExp_4_1_2_h
-
-			spreadFExp_4_2_2_ID := AltTab_ID_List_FileExplorer_sortDsc_h_2_ID
-			spreadFExp_4_2_2_w := AltTab_ID_List_FileExplorer_sortDsc_h_2_w
-			spreadFExp_4_2_2_h := AltTab_ID_List_FileExplorer_sortDsc_h_2_h
-			spreadFExp_4_2_2_x := monitor_%monitor_no_prm%_workarea_center_x
-			spreadFExp_4_2_2_y := monitor_%monitor_no_prm%_workarea_center_y - spreadFExp_4_2_2_h
-
-			; Compare left and right on each row, and put a wider one on the left.
-			if (spreadFExp_4_1_1_w < spreadFExp_4_2_1_w) {
-				swap := spreadFExp_4_1_1_ID
-				spreadFExp_4_1_1_ID := spreadFExp_4_2_1_ID
-				spreadFExp_4_2_1_ID := swap
-				swap := spreadFExp_4_1_1_w
-				spreadFExp_4_1_1_w := spreadFExp_4_2_1_w
-				spreadFExp_4_2_1_w := swap
-				swap := spreadFExp_4_1_1_h
-				spreadFExp_4_1_1_h := spreadFExp_4_2_1_h
-				spreadFExp_4_2_1_h := swap
-
-				spreadFExp_4_1_1_x := monitor_%monitor_no_prm%_workarea_center_x - spreadFExp_4_1_1_w
-				spreadFExp_4_1_1_y := monitor_%monitor_no_prm%_workarea_center_y 
-				spreadFExp_4_2_1_x := monitor_%monitor_no_prm%_workarea_center_x
-				spreadFExp_4_2_1_y := monitor_%monitor_no_prm%_workarea_center_y
-			}
-			if (spreadFExp_4_1_2_w < spreadFExp_4_2_2_w) {
-				swap := spreadFExp_4_1_2_ID
-				spreadFExp_4_1_2_ID := spreadFExp_4_2_2_ID
-				spreadFExp_4_2_2_ID := swap
-				swap := spreadFExp_4_1_2_w
-				spreadFExp_4_1_2_w := spreadFExp_4_2_2_w
-				spreadFExp_4_2_2_w := swap
-				swap := spreadFExp_4_1_2_h
-				spreadFExp_4_1_2_h := spreadFExp_4_2_2_h
-				spreadFExp_4_2_2_h := swap
-
-				spreadFExp_4_1_2_x := monitor_%monitor_no_prm%_workarea_center_x - spreadFExp_4_1_2_w
-				spreadFExp_4_1_2_y := monitor_%monitor_no_prm%_workarea_center_y - spreadFExp_4_1_2_h
-				spreadFExp_4_2_2_x := monitor_%monitor_no_prm%_workarea_center_x
-				spreadFExp_4_2_2_y := monitor_%monitor_no_prm%_workarea_center_y - spreadFExp_4_2_2_h
-			}
-
-			; Adjusting process starts.
-
-			;  - Adjusting x axis direction
-
-			; first. Check if only one of the two bottom windows is wider than the half width of the screen
-			if (((spreadFExp_4_1_1_w > monitor_%monitor_no_prm%_workarea_width / 2) and !(spreadFExp_4_2_1_w > monitor_%monitor_no_prm%_workarea_width / 2)) or (!(spreadFExp_4_1_1_w > monitor_%monitor_no_prm%_workarea_width / 2) and (spreadFExp_4_2_1_w > monitor_%monitor_no_prm%_workarea_width / 2))) {
-				; sum of the two widths are bigger than the screen
-				if (spreadFExp_4_1_1_w + spreadFExp_4_2_1_w > monitor_%monitor_no_prm%_workarea_width) { 	
-					spreadFExp_4_1_1_x := monitor_%monitor_no_prm%_workarea_left 	; This is actually useless because it's useful when the right window may be longer than the left one.
-					spreadFExp_4_2_1_x := monitor_%monitor_no_prm%_workarea_center_x > monitor_%monitor_no_prm%_workarea_right - spreadFExp_4_2_1_w ? monitor_%monitor_no_prm%_workarea_center_x : monitor_%monitor_no_prm%_workarea_right - spreadFExp_4_2_1_w 	; This is actually useless because it's useful when the right window may be longer than the left one.
-				} else {
-					spreadFExp_4_1_1_x := monitor_%monitor_no_prm%_workarea_left
-					spreadFExp_4_2_1_x := spreadFExp_4_1_1_x + spreadFExp_4_1_1_w
-				}
-			} 
-			; Check if both are wider than half width of the screen
-			else if ((spreadFExp_4_1_1_w > monitor_%monitor_no_prm%_workarea_width / 2) and (spreadFExp_4_2_1_w > monitor_%monitor_no_prm%_workarea_width / 2)) {
-				spreadFExp_4_1_1_x := monitor_%monitor_no_prm%_workarea_left
-				spreadFExp_4_2_1_x := monitor_%monitor_no_prm%_workarea_center_x
-			}
-
-			; Second. Check if only one of the two upper windows is wider than the half width of the screen
-			if (((spreadFExp_4_1_2_w > monitor_%monitor_no_prm%_workarea_width / 2) and !(spreadFExp_4_2_2_w > monitor_%monitor_no_prm%_workarea_width / 2)) or (!(spreadFExp_4_1_2_w > monitor_%monitor_no_prm%_workarea_width / 2) and (spreadFExp_4_2_2_w > monitor_%monitor_no_prm%_workarea_width / 2))) {
-				if (spreadFExp_4_1_2_w + spreadFExp_4_2_2_w > monitor_%monitor_no_prm%_workarea_width) { 	
-					spreadFExp_4_1_2_x := monitor_%monitor_no_prm%_workarea_left 	; This is actually useless because it's useful when the right window may be longer than the left one.
-					spreadFExp_4_2_2_x := spreadFExp_4_2_2_w > monitor_%monitor_no_prm%_workarea_width / 2 ? monitor_%monitor_no_prm%_workarea_center_x : monitor_%monitor_no_prm%_workarea_right - spreadFExp_4_2_2_w 	; This is actually useless because it's useful when the right window may be longer than the left one.
-				} else {
-					spreadFExp_4_1_2_x := monitor_%monitor_no_prm%_workarea_left
-					spreadFExp_4_2_2_x := spreadFExp_4_1_2_x + spreadFExp_4_1_2_w
-				}
-			}
-			; Check if both are wider than half width of the screen
-			else if ((spreadFExp_4_1_2_w > monitor_%monitor_no_prm%_workarea_width / 2) and (spreadFExp_4_2_2_w > monitor_%monitor_no_prm%_workarea_width / 2)) {
-				spreadFExp_4_1_2_x := monitor_%monitor_no_prm%_workarea_left
-				spreadFExp_4_2_2_x := monitor_%monitor_no_prm%_workarea_center_x
-			}
-
-			;  - Adjusting y axis direction
-
-			; first. Check if only one of the two bottom windows is wider than the half width of the screen
-			if (((spreadFExp_4_1_2_h > monitor_%monitor_no_prm%_workarea_height / 2) and !(spreadFExp_4_1_1_h > monitor_%monitor_no_prm%_workarea_height / 2)) or (!(spreadFExp_4_1_2_h > monitor_%monitor_no_prm%_workarea_height / 2) and (spreadFExp_4_1_1_h > monitor_%monitor_no_prm%_workarea_height / 2))) {
-				; sum of the two widths are bigger than the screen
-				if (spreadFExp_4_1_2_h + spreadFExp_4_1_1_h > monitor_%monitor_no_prm%_workarea_height) {
-					spreadFExp_4_1_2_y := monitor_%monitor_no_prm%_workarea_top 	; Like the x axis direction case, this and following line are useless because the upper window is already has longer height
-					spreadFExp_4_1_1_y := monitor_%monitor_no_prm%_workarea_center_y > monitor_%monitor_no_prm%_workarea_bottom - spreadFExp_4_1_1_h ? monitor_%monitor_no_prm%_workarea_center_y : monitor_%monitor_no_prm%_workarea_bottom - spreadFExp_4_1_1_h
-				} else {
-					spreadFExp_4_1_2_y := monitor_%monitor_no_prm%_workarea_top
-					spreadFExp_4_1_1_y := spreadFExp_4_1_2_y + spreadFExp_4_1_2_h
-				}
-			} 
-			; Check if both are wider than half width of the screen
-			else if ((spreadFExp_4_1_2_h > monitor_%monitor_no_prm%_workarea_height / 2) and (spreadFExp_4_1_1_h > monitor_%monitor_no_prm%_workarea_height / 2)) {
-				spreadFExp_4_1_2_y := monitor_%monitor_no_prm%_workarea_top
-				spreadFExp_4_1_1_y := monitor_%monitor_no_prm%_workarea_center_y
-			}
-
-			; Second. Check if only one of the two upper windows is wider than the half width of the screen
-			if (((spreadFExp_4_2_2_h > monitor_%monitor_no_prm%_workarea_height / 2) and !(spreadFExp_4_2_1_h > monitor_%monitor_no_prm%_workarea_height / 2)) or (!(spreadFExp_4_2_2_h > monitor_%monitor_no_prm%_workarea_height / 2) and (spreadFExp_4_2_1_h > monitor_%monitor_no_prm%_workarea_height / 2))) {
-				if (spreadFExp_4_2_2_h + spreadFExp_4_2_1_h > monitor_%monitor_no_prm%_workarea_height) {
-					spreadFExp_4_2_2_y := monitor_%monitor_no_prm%_workarea_top 	; Like the x axis direction case, this and following line are useless because the upper window is already has longer height
-					spreadFExp_4_2_1_y := spreadFExp_4_2_1_h > monitor_%monitor_no_prm%_workarea_height / 2 ? monitor_%monitor_no_prm%_workarea_center_y : monitor_%monitor_no_prm%_workarea_bottom - spreadFExp_4_2_1_h
-				} else {
-					spreadFExp_4_2_2_y := monitor_%monitor_no_prm%_workarea_top
-					spreadFExp_4_2_1_y := spreadFExp_4_2_2_y + spreadFExp_4_2_2_h
-				}
-			}
-			; Check if both are wider than half width of the screen
-			else if ((spreadFExp_4_2_2_h > monitor_%monitor_no_prm%_workarea_height / 2) and (spreadFExp_4_2_1_h > monitor_%monitor_no_prm%_workarea_height / 2)) {
-				spreadFExp_4_2_2_y := monitor_%monitor_no_prm%_workarea_top
-				spreadFExp_4_2_1_y := monitor_%monitor_no_prm%_workarea_center_y
-			}
-
-			; Adjusting done.
-
-			; Now move and put windows
-
-				WinMove, % "ahk_id " spreadFExp_4_1_1_ID, , spreadFExp_4_1_1_x, spreadFExp_4_1_1_y 
-				WinMove, % "ahk_id " spreadFExp_4_1_2_ID, , spreadFExp_4_1_2_x, spreadFExp_4_1_2_y 
-				WinMove, % "ahk_id " spreadFExp_4_2_1_ID, , spreadFExp_4_2_1_x, spreadFExp_4_2_1_y 
-				WinMove, % "ahk_id " spreadFExp_4_2_2_ID, , spreadFExp_4_2_2_x, spreadFExp_4_2_2_y 
-				
-				
-
-				WinSet, AlwaysOnTop, On, % "ahk_id " spreadFExp_4_1_2_ID
-				WinSet, AlwaysOnTop, On, % "ahk_id " spreadFExp_4_2_2_ID
-				WinSet, AlwaysOnTop, On, % "ahk_id " spreadFExp_4_1_1_ID
-				WinSet, AlwaysOnTop, On, % "ahk_id " spreadFExp_4_2_1_ID
-				WinSet, AlwaysOnTop, Off, % "ahk_id " spreadFExp_4_1_2_ID
-				WinSet, AlwaysOnTop, Off, % "ahk_id " spreadFExp_4_2_2_ID
-				WinSet, AlwaysOnTop, Off, % "ahk_id " spreadFExp_4_1_1_ID
-				WinSet, AlwaysOnTop, Off, % "ahk_id " spreadFExp_4_2_1_ID
-
-				WinActivate, % "ahk_id " AltTab_ID_List_FileExplorer_1
-
-
-		} else if (AltTab_ID_List_FileExplorer_0 >= 5) {
-			;   (1,2)-(2,2)   n - 3
-			;       mid     ..,5,4      ; 1st one is the largest one. n-th one is the smallest one.         
-			;   (1,1)-(2,1)   2 - 1
-
-			FExp_onDiag_no := AltTab_ID_List_FileExplorer_0 - 4
-			
-			; sort by areas in descending order 
-			; the last windows are smallest windows
-			
-			; preparation for sorting - assigning ID
-		 	Loop, % AltTab_ID_List_FileExplorer_0 { 
-				AltTab_ID_List_FileExplorer_sort_area_dsc_%A_Index%_ID := AltTab_ID_List_FileExplorer_%A_Index%  		
-				AltTab_ID_List_FileExplorer_sort_area_dsc_%A_Index%_wh := AltTab_ID_List_FileExplorer_%A_Index%_w * AltTab_ID_List_FileExplorer_%A_Index%_h
-			}
-			Loop, % AltTab_ID_List_FileExplorer_0 - 1 {
-				Loop, % AltTab_ID_List_FileExplorer_0 - A_Index {
-					nextIndex := A_Index + 1
-					if (AltTab_ID_List_FileExplorer_sort_area_dsc_%A_Index%_wh < AltTab_ID_List_FileExplorer_sort_area_dsc_%nextIndex%_wh) {
-						swap := AltTab_ID_List_FileExplorer_sort_area_dsc_%A_Index%_wh
-						AltTab_ID_List_FileExplorer_sort_area_dsc_%A_Index%_wh := AltTab_ID_List_FileExplorer_sort_area_dsc_%nextIndex%_wh
-						AltTab_ID_List_FileExplorer_sort_area_dsc_%nextIndex%_wh := swap
-						swap := AltTab_ID_List_FileExplorer_sort_area_dsc_%A_Index%_ID 														; assigning ID
-						AltTab_ID_List_FileExplorer_sort_area_dsc_%A_Index%_ID := AltTab_ID_List_FileExplorer_sort_area_dsc_%nextIndex%_ID 					; assigning ID
-						AltTab_ID_List_FileExplorer_sort_area_dsc_%nextIndex%_ID := swap  													; assigning ID
-					}
-				}
-			}
-			Loop, % AltTab_ID_List_FileExplorer_0 {
-				WinGetPos, , , temp_w, temp_h , % "ahk_id " AltTab_ID_List_FileExplorer_sort_area_dsc_%A_Index%_ID
-				AltTab_ID_List_FileExplorer_sort_area_dsc_%A_Index%_w := temp_w 	
-				AltTab_ID_List_FileExplorer_sort_area_dsc_%A_Index%_h := temp_h
-			}
-			;;;;;;;;;;;;;;;;;;;;;;;;;; sorting is done.
-
-			; 4th, 5th, ... , (n-1)th will be put diagonally.
-
-			; From now on, working with location-based windows
-			; initial setting: 4 windows are all put at the corner of the screen (differently from when there are only 4 windows)
-			spreadFExp_4_1_1_ID := AltTab_ID_List_FileExplorer_sort_area_dsc_2_ID
-			spreadFExp_4_1_1_w := AltTab_ID_List_FileExplorer_sort_area_dsc_2_w
-			spreadFExp_4_1_1_h := AltTab_ID_List_FileExplorer_sort_area_dsc_2_h
-			spreadFExp_4_1_1_x := monitor_%monitor_no_prm%_workarea_left
-			spreadFExp_4_1_1_y := monitor_%monitor_no_prm%_workarea_bottom - spreadFExp_4_1_1_h 
-
-			spreadFExp_4_2_1_ID := AltTab_ID_List_FileExplorer_sort_area_dsc_1_ID
-			spreadFExp_4_2_1_w := AltTab_ID_List_FileExplorer_sort_area_dsc_1_w
-			spreadFExp_4_2_1_h := AltTab_ID_List_FileExplorer_sort_area_dsc_1_h
-			spreadFExp_4_2_1_x := monitor_%monitor_no_prm%_workarea_right - spreadFExp_4_2_1_w
-			spreadFExp_4_2_1_y := monitor_%monitor_no_prm%_workarea_bottom - spreadFExp_4_2_1_h
-
-			spreadFExp_4_1_2_ID := AltTab_ID_List_FileExplorer_sort_area_dsc_%AltTab_ID_List_FileExplorer_0%_ID
-			spreadFExp_4_1_2_w := AltTab_ID_List_FileExplorer_sort_area_dsc_%AltTab_ID_List_FileExplorer_0%_w
-			spreadFExp_4_1_2_h := AltTab_ID_List_FileExplorer_sort_area_dsc_%AltTab_ID_List_FileExplorer_0%_h
-			spreadFExp_4_1_2_x := monitor_%monitor_no_prm%_workarea_left
-			spreadFExp_4_1_2_y := monitor_%monitor_no_prm%_workarea_top
-
-			spreadFExp_4_2_2_ID := AltTab_ID_List_FileExplorer_sort_area_dsc_3_ID
-			spreadFExp_4_2_2_w := AltTab_ID_List_FileExplorer_sort_area_dsc_3_w
-			spreadFExp_4_2_2_h := AltTab_ID_List_FileExplorer_sort_area_dsc_3_h
-			spreadFExp_4_2_2_x := monitor_%monitor_no_prm%_workarea_right - spreadFExp_4_2_2_w
-			spreadFExp_4_2_2_y := monitor_%monitor_no_prm%_workarea_top
-
-			WinMove, % "ahk_id " spreadFExp_4_1_1_ID, , spreadFExp_4_1_1_x, spreadFExp_4_1_1_y 
-			WinMove, % "ahk_id " spreadFExp_4_1_2_ID, , spreadFExp_4_1_2_x, spreadFExp_4_1_2_y 
-			WinMove, % "ahk_id " spreadFExp_4_2_1_ID, , spreadFExp_4_2_1_x, spreadFExp_4_2_1_y 
-			WinMove, % "ahk_id " spreadFExp_4_2_2_ID, , spreadFExp_4_2_2_x, spreadFExp_4_2_2_y 
-
-			WinSet, AlwaysOnTop, On, % "ahk_id " spreadFExp_4_1_2_ID
-			WinSet, AlwaysOnTop, Off, % "ahk_id " spreadFExp_4_1_2_ID
-			WinSet, AlwaysOnTop, On, % "ahk_id " spreadFExp_4_2_2_ID
-			WinSet, AlwaysOnTop, Off, % "ahk_id " spreadFExp_4_2_2_ID
-			WinSet, AlwaysOnTop, On, % "ahk_id " spreadFExp_4_1_1_ID
-			WinSet, AlwaysOnTop, Off, % "ahk_id " spreadFExp_4_1_1_ID
-
-			; finding positions for the windows to put diagonally
-			; putting diagonally, overlapping
-			spreadFExp_left := monitor_%monitor_no_prm%_workarea_left
-			spreadFExp_top := monitor_%monitor_no_prm%_workarea_top
-			spreadFExp_end_x := monitor_%monitor_no_prm%_workarea_right - spreadFExp_4_2_1_w		; The top one will be right down corner and top
-			spreadFExp_end_y := monitor_%monitor_no_prm%_workarea_bottom - spreadFExp_4_2_1_h 		; The top one will be right down corner and top
-			spreadFExp_step_width := (spreadFExp_end_x - spreadFExp_left) / (FExp_onDiag_no + 1)
-			spreadFExp_step_height := (spreadFExp_end_y - spreadFExp_top) / (FExp_onDiag_no + 1)
-			Loop, % FExp_onDiag_no {
-				temp_index := AltTab_ID_List_FileExplorer_0 - A_Index
-				spreadFExpEach_x := spreadFExp_left + spreadFExp_step_width * A_Index
-				spreadFExpEach_y := spreadFExp_top + spreadFExp_step_height * A_Index
-				WinMove, % "ahk_id " AltTab_ID_List_FileExplorer_sort_area_dsc_%temp_index%_ID, , spreadFExpEach_x, spreadFExpEach_y 
-				WinSet, AlwaysOnTop, On, % "ahk_id " AltTab_ID_List_FileExplorer_sort_area_dsc_%temp_index%_ID
-				WinSet, AlwaysOnTop, Off, % "ahk_id " AltTab_ID_List_FileExplorer_sort_area_dsc_%temp_index%_ID
-			}
-
-				WinSet, AlwaysOnTop, On, % "ahk_id " spreadFExp_4_2_1_ID
-				WinSet, AlwaysOnTop, Off, % "ahk_id " spreadFExp_4_2_1_ID
-
-				WinActivate, % "ahk_id " AltTab_ID_List_FileExplorer_1
-
-		;} else if (AltTab_ID_List_FileExplorer_0 <= monitor_%monitor_no_prm%_grid_no_xy) {
-		} else {
-			; putting diagonally, overlapping
-			spreadFExp_left := monitor_%monitor_no_prm%_workarea_left
-			spreadFExp_top := monitor_%monitor_no_prm%_workarea_top
-			spreadFExp_end_x := monitor_%monitor_no_prm%_workarea_right - AltTab_ID_List_FileExplorer_1_w		; The top one will be right down corner and top
-			spreadFExp_end_y := monitor_%monitor_no_prm%_workarea_bottom - AltTab_ID_List_FileExplorer_1_h 	; The top one will be right down corner and top
-			spreadFExp_step_width := (spreadFExp_end_x - spreadFExp_left) / (AltTab_ID_List_FileExplorer_0 - 1)
-			spreadFExp_step_height := (spreadFExp_end_y - spreadFExp_top) /(AltTab_ID_List_FileExplorer_0 - 1)
-			Loop, % AltTab_ID_List_FileExplorer_0 {
-				temp_index := AltTab_ID_List_FileExplorer_0 - A_Index + 1
-				spreadFExpEach_x := spreadFExp_left + spreadFExp_step_width * (A_Index - 1)
-				spreadFExpEach_y := spreadFExp_top + spreadFExp_step_height * (A_Index - 1)
-				WinMove, % "ahk_id " AltTab_ID_List_FileExplorer_%temp_index%, , spreadFExpEach_x, spreadFExpEach_y 	; When SetWinDelay, -1 is declared, WinMove is as fast as DllCall("MoveWindow".. .
-				WinSet, AlwaysOnTop, On, % "ahk_id " AltTab_ID_List_FileExplorer_%temp_index%
-				WinSet, AlwaysOnTop, Off, % "ahk_id " AltTab_ID_List_FileExplorer_%temp_index%
-			}
-			WinActivate, % "ahk_id " AltTab_ID_List_FileExplorer_1
-		}
-	}
+	Show_Windows("Explorer.exe", "", 0) 	; spread mode - the old ~690-line Explorer-only implementation was superseded by Show_Windows()
 Return
 ; ================= Showing only File Explorer - without changing size ======= ends ==================
 
@@ -1910,16 +994,7 @@ CapsLock & Right::
 	control_triggered := 0
 	capSpeedUpArrowKey := 0
 
-	; to collect the displays info about each monitor (hoisted out of the loop below; it used to be re-queried every iteration):
-	; SysGet: Retrieves screen resolution, multi-monitor info, dimensions of system objects, and other system properties.
-	; Sub-command: MonitorCount, Monitor [, N], MonitorWorkArea, etc.
-	SysGet, monitor_no, MonitorCount
-	Loop, %monitor_no% {
-	    SysGet, Monitor_%A_Index%_, Monitor, %A_Index%
-	    SysGet, Monitor_%A_Index%_WorkArea_, MonitorWorkArea, %A_Index%
-		monitor_%A_Index%_workarea_width := monitor_%A_Index%_workarea_right - monitor_%A_Index%_workarea_left
-		monitor_%A_Index%_workarea_height := monitor_%A_Index%_workarea_bottom - monitor_%A_Index%_workarea_top
-	}
+	CollectMonitorInfo() 	; (hoisted out of the loop below; it used to be re-queried every iteration)
 
 	loop {
 		WinGet, wm_target_id, ID, A 	; snapshot the active window once per iteration, so a focus change between the position read and the move cannot hand this window's coordinates to a different window
@@ -2226,43 +1301,31 @@ CapsLock & Right::
 
 					; to check how many controls were pushed and so as to set girdNo.
 					if (control_triggered = 0) {
-						currentTime := A_TickCount
 						control_triggered := 1
 						control_repushCheck := 0
-						gridNo := 1
-						loop, % timeStamp_modfr_max {
-							if (currentTime - timeStamp_Control_%A_Index% < 1500) {
-								gridNo ++
-							}
-						}
+						gridNo := 1 + CountRecentTaps("Control")
 					}
 
 					if (is_up = "D") {
-						WinMove, ahk_id %wm_target_id%,, , ScreenWoTaskbar_Y + Ceil((Y - ScreenWoTaskbar_Y - 1)/ScreenWoTaskbar_H * gridNo - 1)*ScreenWoTaskbar_H / gridNo, ScreenWoTaskbar_W / gridNo, ScreenWoTaskbar_H / gridNo 
+						DWM_WinMove("ahk_id " wm_target_id, "", ScreenWoTaskbar_Y + Ceil((Y - ScreenWoTaskbar_Y - 1)/ScreenWoTaskbar_H * gridNo - 1)*ScreenWoTaskbar_H / gridNo, ScreenWoTaskbar_W / gridNo, ScreenWoTaskbar_H / gridNo) 
 						KeyWait, Up, % "T" SETTING_CONSTANT_WINMOV_STEP_REP
 					}
 					if (is_down = "D") {
-						WinMove, ahk_id %wm_target_id%,, , ScreenWoTaskbar_Y + Ceil((Y - ScreenWoTaskbar_Y + 1)/ScreenWoTaskbar_H * gridNo)*ScreenWoTaskbar_H / gridNo, ScreenWoTaskbar_W / gridNo, ScreenWoTaskbar_H / gridNo 
+						DWM_WinMove("ahk_id " wm_target_id, "", ScreenWoTaskbar_Y + Ceil((Y - ScreenWoTaskbar_Y + 1)/ScreenWoTaskbar_H * gridNo)*ScreenWoTaskbar_H / gridNo, ScreenWoTaskbar_W / gridNo, ScreenWoTaskbar_H / gridNo) 
 						KeyWait, Down, % "T" SETTING_CONSTANT_WINMOV_STEP_REP
 					}
 					if (is_left = "D") {
-						WinMove, ahk_id %wm_target_id%,, ScreenWoTaskbar_X + Ceil((X - ScreenWoTaskbar_X - 1)/ScreenWoTaskbar_W * gridNo - 1)*ScreenWoTaskbar_W / gridNo, , ScreenWoTaskbar_W / gridNo, ScreenWoTaskbar_H / gridNo
+						DWM_WinMove("ahk_id " wm_target_id, ScreenWoTaskbar_X + Ceil((X - ScreenWoTaskbar_X - 1)/ScreenWoTaskbar_W * gridNo - 1)*ScreenWoTaskbar_W / gridNo, "", ScreenWoTaskbar_W / gridNo, ScreenWoTaskbar_H / gridNo)
 						KeyWait, Left, % "T" SETTING_CONSTANT_WINMOV_STEP_REP
 					}
 					if (is_right = "D") {
-						WinMove, ahk_id %wm_target_id%,, ScreenWoTaskbar_X + Ceil((X - ScreenWoTaskbar_X + 1)/ScreenWoTaskbar_W * gridNo)*ScreenWoTaskbar_W / gridNo, , ScreenWoTaskbar_W / gridNo, ScreenWoTaskbar_H / gridNo
+						DWM_WinMove("ahk_id " wm_target_id, ScreenWoTaskbar_X + Ceil((X - ScreenWoTaskbar_X + 1)/ScreenWoTaskbar_W * gridNo)*ScreenWoTaskbar_W / gridNo, "", ScreenWoTaskbar_W / gridNo, ScreenWoTaskbar_H / gridNo)
 						KeyWait, Right, % "T" SETTING_CONSTANT_WINMOV_STEP_REP
 					}
 				} else {
 					; to check how many Shifts were pushed and so as to set speedup.
 					if (!capSpeedUpArrowKey) {
-						currentTime := A_TickCount
-						capSpeedUpArrowKey := 1 	; The last CapsLock stroke is not stamped. So we start at 1.
-						loop, % timeStamp_modfr_max {
-							if (currentTime - timeStamp_CapsLock_%A_Index% < 1500) {
-								capSpeedUpArrowKey ++
-							}
-						}
+						capSpeedUpArrowKey := 1 + CountRecentTaps("CapsLock") 	; The last CapsLock stroke is not stamped. So we start at 1.
 						;Tooltip, % "Speed level up - lev. " capSpeedUpArrowKey " " is_down " " is_up " " is_right " " is_left " " GetKeyState("CapsLock", "P")	
 						;SetTimer, RemoveToolTip, % SETTING_CONSTANT_TOOLTIPDUR_S
 					}
@@ -2457,13 +1520,7 @@ return
 ;; Win+Alt+Shift+Arrow Key
 #!+Right::
 	WinGetPos, X,Y,W,H,A  ; "A" to get the active window's pos.
-	; SysGet: Retrieves screen resolution, multi-monitor info, dimensions of system objects, and other system properties.
-	; Sub-command: MonitorCount, Monitor [, N], MonitorWorkArea, etc.
-	SysGet, monitor_no, MonitorCount	
-	Loop, %monitor_no% {
-	    SysGet, Monitor_%A_Index%_, Monitor, %A_Index%
-	    SysGet, Monitor_%A_Index%_WorkArea_, MonitorWorkArea, %A_Index%
-	}
+	CollectMonitorInfo()
 	i := 0	
 	loop, %monitor_no% {
 		if (X + W < monitor_%A_Index%_workarea_right) and (monitor_%A_Index%_workarea_top < Y + H) and (Y < monitor_%A_Index%_workarea_bottom) {		; monitors' lefts and rights are like 0 ~ 2560, -1920 ~ 0. And mouse point is like (0, 0) ~ (2559, 1439). So adding + 0.5 will make the cases finally exclusive.
@@ -2484,13 +1541,7 @@ return
 
 #!+Left::
 	WinGetPos, X,Y,W,H,A  ; "A" to get the active window's pos.
-	; SysGet: Retrieves screen resolution, multi-monitor info, dimensions of system objects, and other system properties.
-	; Sub-command: MonitorCount, Monitor [, N], MonitorWorkArea, etc.
-	SysGet, monitor_no, MonitorCount	
-	Loop, %monitor_no% {
-	    SysGet, Monitor_%A_Index%_, Monitor, %A_Index%
-	    SysGet, Monitor_%A_Index%_WorkArea_, MonitorWorkArea, %A_Index%
-	}
+	CollectMonitorInfo()
 	i := 0	
 	loop, %monitor_no% {
 		if (monitor_%A_Index%_workarea_left < X) and (monitor_%A_Index%_workarea_top < Y + H) and (Y < monitor_%A_Index%_workarea_bottom) {		; monitors' lefts and rights are like 0 ~ 2560, -1920 ~ 0. And mouse point is like (0, 0) ~ (2559, 1439). So adding + 0.5 will make the cases finally exclusive.
@@ -2511,13 +1562,7 @@ return
 
 #!+Up::
 	WinGetPos, X,Y,W,H,A  ; "A" to get the active window's pos.
-	; SysGet: Retrieves screen resolution, multi-monitor info, dimensions of system objects, and other system properties.
-	; Sub-command: MonitorCount, Monitor [, N], MonitorWorkArea, etc.
-	SysGet, monitor_no, MonitorCount	
-	Loop, %monitor_no% {
-	    SysGet, Monitor_%A_Index%_, Monitor, %A_Index%
-	    SysGet, Monitor_%A_Index%_WorkArea_, MonitorWorkArea, %A_Index%
-	}
+	CollectMonitorInfo()
 	i := 0
 	loop, %monitor_no% {
 		if (monitor_%A_Index%_workarea_left < X + W) and (X < monitor_%A_Index%_workarea_right) and (monitor_%A_Index%_workarea_top < Y) {		; monitors' lefts and rights are like 0 ~ 2560, -1920 ~ 0. And mouse point is like (0, 0) ~ (2559, 1439). So adding + 0.5 will make the cases finally exclusive.
@@ -2538,13 +1583,7 @@ return
 
 #!+Down::
 	WinGetPos, X,Y,W,H,A  ; "A" to get the active window's pos.
-	; SysGet: Retrieves screen resolution, multi-monitor info, dimensions of system objects, and other system properties.
-	; Sub-command: MonitorCount, Monitor [, N], MonitorWorkArea, etc.
-	SysGet, monitor_no, MonitorCount	
-	Loop, %monitor_no% {
-	    SysGet, Monitor_%A_Index%_, Monitor, %A_Index%
-	    SysGet, Monitor_%A_Index%_WorkArea_, MonitorWorkArea, %A_Index%
-	}
+	CollectMonitorInfo()
 	i := 0
 	loop, %monitor_no% {
 		if (monitor_%A_Index%_workarea_left < X + W) and (X < monitor_%A_Index%_workarea_right) and (Y + H < monitor_%A_Index%_workarea_bottom) {		; monitors' lefts and rights are like 0 ~ 2560, -1920 ~ 0. And mouse point is like (0, 0) ~ (2559, 1439). So adding + 0.5 will make the cases finally exclusive.
@@ -2581,14 +1620,7 @@ CapsLock & LButton::
 		WinActivate, ahk_id %MouseWin%
 	}	
 	
-	; to collect the displays info about each monitor:
-	SysGet, monitor_no, MonitorCount
-	Loop, %monitor_no% {
-	    SysGet, Monitor_%A_Index%_, Monitor, %A_Index%
-	    SysGet, Monitor_%A_Index%_WorkArea_, MonitorWorkArea, %A_Index%
-		monitor_%A_Index%_workarea_width := monitor_%A_Index%_workarea_right - monitor_%A_Index%_workarea_left
-		monitor_%A_Index%_workarea_height := monitor_%A_Index%_workarea_bottom - monitor_%A_Index%_workarea_top
-	}
+	CollectMonitorInfo()
 	
 	; 마우스 클릭을 할 당시 윈도우가 max였는지 아닌지 확인. max였다면 그걸 끌어당겨 내려왔을 때 창의 크기에 대한 준비
 	WinGet, is_max, MinMax, ahk_id %MouseWin% 
@@ -2676,31 +1708,31 @@ CapsLock & LButton::
 								WinRestore, ahk_id %MouseWin% 	; In case it has touched the top	
 								WinGetPos, , , W, H, ahk_id %MouseWin%
 							}			
-							WinMove, ahk_id %MouseWin%,, monitor_%A_Index%_workarea_left + 0, monitor_%A_Index%_workarea_top + 0, monitor_%A_Index%_workarea_width/2, monitor_%A_Index%_workarea_height/2
+							DWM_WinMove("ahk_id " MouseWin, monitor_%A_Index%_workarea_left, monitor_%A_Index%_workarea_top, monitor_%A_Index%_workarea_width/2, monitor_%A_Index%_workarea_height/2)
 						} else if (MouseX > monitor_%A_Index%_workarea_right - SETTING_CONSTANT_CAPSMOVE_CORNER) and (MouseY < monitor_%A_Index%_workarea_top + SETTING_CONSTANT_CAPSMOVE_CORNER) {	; right up
 							if (is_max = 1) {		; if the window is maximized 
 								WinRestore, ahk_id %MouseWin% 	; In case it has touched the top	
 								WinGetPos, , , W, H, ahk_id %MouseWin%
 							}			
-							WinMove, ahk_id %MouseWin%,, monitor_%A_Index%_workarea_left + monitor_%A_Index%_workarea_width/2, monitor_%A_Index%_workarea_top + 0, monitor_%A_Index%_workarea_width/2, monitor_%A_Index%_workarea_height/2
+							DWM_WinMove("ahk_id " MouseWin, monitor_%A_Index%_workarea_left + monitor_%A_Index%_workarea_width/2, monitor_%A_Index%_workarea_top, monitor_%A_Index%_workarea_width/2, monitor_%A_Index%_workarea_height/2)
 						} else if (MouseX > monitor_%A_Index%_workarea_right - SETTING_CONSTANT_CAPSMOVE_CORNER) and (MouseY > monitor_%A_Index%_workarea_bottom - SETTING_CONSTANT_CAPSMOVE_CORNER) {	; right bottom
 							if (is_max = 1) {		; if the window is maximized 
 								WinRestore, ahk_id %MouseWin% 	; In case it has touched the top	
 								WinGetPos, , , W, H, ahk_id %MouseWin%
 							} 
-							WinMove, ahk_id %MouseWin%,, monitor_%A_Index%_workarea_left + monitor_%A_Index%_workarea_width/2, monitor_%A_Index%_workarea_top + monitor_%A_Index%_workarea_height/2, monitor_%A_Index%_workarea_width/2, monitor_%A_Index%_workarea_height/2
+							DWM_WinMove("ahk_id " MouseWin, monitor_%A_Index%_workarea_left + monitor_%A_Index%_workarea_width/2, monitor_%A_Index%_workarea_top + monitor_%A_Index%_workarea_height/2, monitor_%A_Index%_workarea_width/2, monitor_%A_Index%_workarea_height/2)
 						} else if (MouseX < monitor_%A_Index%_workarea_left + SETTING_CONSTANT_CAPSMOVE_CORNER) and (MouseY > monitor_%A_Index%_workarea_bottom - SETTING_CONSTANT_CAPSMOVE_CORNER) {	; left bottom
 							if (is_max = 1) {		; if the window is maximized 
 								WinRestore, ahk_id %MouseWin% 	; In case it has touched the top	
 								WinGetPos, , , W, H, ahk_id %MouseWin%
 							} 
-							WinMove, ahk_id %MouseWin%,, monitor_%A_Index%_workarea_left + 0, monitor_%A_Index%_workarea_top + monitor_%A_Index%_workarea_height/2, monitor_%A_Index%_workarea_width/2, monitor_%A_Index%_workarea_height/2
+							DWM_WinMove("ahk_id " MouseWin, monitor_%A_Index%_workarea_left, monitor_%A_Index%_workarea_top + monitor_%A_Index%_workarea_height/2, monitor_%A_Index%_workarea_width/2, monitor_%A_Index%_workarea_height/2)
 						} else if (MouseX < monitor_%A_Index%_workarea_left + SETTING_CONSTANT_CAPSMOVE_LRB){	; left
 							if (is_max = 1) {		; if the window is maximized 
 								WinRestore, ahk_id %MouseWin% 	; In case it has touched the top	
 								WinGetPos, , , W, H, ahk_id %MouseWin%
 							} 
-							WinMove, ahk_id %MouseWin%,, monitor_%A_Index%_workarea_left + 0, monitor_%A_Index%_workarea_top + 0, monitor_%A_Index%_workarea_width/2, monitor_%A_Index%_workarea_height
+							DWM_WinMove("ahk_id " MouseWin, monitor_%A_Index%_workarea_left, monitor_%A_Index%_workarea_top, monitor_%A_Index%_workarea_width/2, monitor_%A_Index%_workarea_height)
 						} else if (MouseY < monitor_%A_Index%_workarea_top + SETTING_CONSTANT_CAPSMOVE_TOP){	; top
 							if (is_max = 0) {		; if the window is not maximized 
 								; To make it remember its original position and size before being maximized
@@ -2713,19 +1745,19 @@ CapsLock & LButton::
 								WinRestore, ahk_id %MouseWin% 	; In case it has touched the top	
 								WinGetPos, , , W, H, ahk_id %MouseWin%
 							}
-							WinMove, ahk_id %MouseWin%,, monitor_%A_Index%_workarea_left + 0, monitor_%A_Index%_workarea_top + 0, monitor_%A_Index%_workarea_width, monitor_%A_Index%_workarea_height/2
+							DWM_WinMove("ahk_id " MouseWin, monitor_%A_Index%_workarea_left, monitor_%A_Index%_workarea_top, monitor_%A_Index%_workarea_width, monitor_%A_Index%_workarea_height/2)
 						} else if (MouseX > monitor_%A_Index%_workarea_right - SETTING_CONSTANT_CAPSMOVE_LRB){	; right
 							if (is_max = 1) {		; if the window is maximized 
 								WinRestore, ahk_id %MouseWin% 	; In case it has touched the top	
 								WinGetPos, , , W, H, ahk_id %MouseWin%
 							} 
-							WinMove, ahk_id %MouseWin%,, monitor_%A_Index%_workarea_left + monitor_%A_Index%_workarea_width/2, monitor_%A_Index%_workarea_top + 0, monitor_%A_Index%_workarea_width/2, monitor_%A_Index%_workarea_height
+							DWM_WinMove("ahk_id " MouseWin, monitor_%A_Index%_workarea_left + monitor_%A_Index%_workarea_width/2, monitor_%A_Index%_workarea_top, monitor_%A_Index%_workarea_width/2, monitor_%A_Index%_workarea_height)
 						} else if (MouseY > monitor_%A_Index%_workarea_bottom - SETTING_CONSTANT_CAPSMOVE_LRB){	; bottom
 							if (is_max = 1) {		; if the window is maximized 
 								WinRestore, ahk_id %MouseWin% 	; In case it has touched the top	
 								WinGetPos, , , W, H, ahk_id %MouseWin%
 							} 
-							WinMove, ahk_id %MouseWin%,, monitor_%A_Index%_workarea_left + 0, monitor_%A_Index%_workarea_top + monitor_%A_Index%_workarea_height/2, monitor_%A_Index%_workarea_width, monitor_%A_Index%_workarea_height/2
+							DWM_WinMove("ahk_id " MouseWin, monitor_%A_Index%_workarea_left, monitor_%A_Index%_workarea_top + monitor_%A_Index%_workarea_height/2, monitor_%A_Index%_workarea_width, monitor_%A_Index%_workarea_height/2)
 						} else {	; Aero Snap 영역 외에 있을 때
 							if (is_max = 1) {		; if the window is maximized 
 								WinRestore, ahk_id %MouseWin% 	; In case it has touched the top	
@@ -2918,13 +1950,7 @@ CapsLock & o::
 	date_help := "Date and Time Input Help`n`nPress a keyboard as bellow to change`n`nO: YY ↔ YYYY`n0: YY/MM/DD → DD/MM/YY → MM/DD/YY`nP: HH:mm ↔ HH:mm:ss`nAny symbol for separator(/.-: etc. ex) 12/04/26, 12-04-26)`nEnter: enter the date or time`nEsc: cancel`n`nFrogControl"
 	CoordMode, ToolTip
 	CoordMode, Caret
-	SysGet, monitor_no, MonitorCount	
-	Loop, %monitor_no% {
-		SysGet, Monitor_%A_Index%_, Monitor, %A_Index%
-	    SysGet, Monitor_%A_Index%_WorkArea_, MonitorWorkArea, %A_Index%
-		monitor_%A_Index%_workarea_width := monitor_%A_Index%_workarea_right - monitor_%A_Index%_workarea_left
-		monitor_%A_Index%_workarea_height := monitor_%A_Index%_workarea_bottom - monitor_%A_Index%_workarea_top
-	}
+	CollectMonitorInfo()
 	loop, %monitor_no% {
 		if (monitor_%A_Index%_left <= A_CaretX) and (A_CaretX <= monitor_%A_Index%_right - 1) and (monitor_%A_Index%_top <= A_CaretY) and (A_CaretY <= monitor_%A_Index%_bottom - 1) {		; monitors' lefts and rights are like 0 ~ 2560, -1920 ~ 0.
 			monitor_current := A_Index
@@ -3258,9 +2284,11 @@ CapsLock & M::
 			ToolTip, % "Press SpaceBar to set the first point"
 			BlockInput, on
 			;KeyWait, LButton, D 	; if it's possible to block a click to pass, this is better than SpaceBar.
-			KeyWait, Space, D
+			KeyWait, Space, D T10 	; timeout so a missed keypress can't leave input blocked forever
+			BlockInput, Off 	; always release input FIRST - a stuck BlockInput locks the whole session
 			MouseGetPos, mouseInit_x, mouseInit_y
-			BlockInput, Off
+			if (!ErrorLevel) 	; Space actually pressed -> enter ruler mode (ErrorLevel is from KeyWait)
+			{
 	
 			; To show t he reference point
 			Gui, mouseRulerRefPoint: New
@@ -3293,6 +2321,7 @@ CapsLock & M::
 					Break
 				}
 			}
+			} 	; end if (!ErrorLevel) - ruler mode ran only if Space was pressed
 			SetTimer, RemoveToolTip, % 1000
 			ToolTip, % "Input any number to move mouse or press arrow keys to move it.`nEsc to quit the mouse control mode.`nPress ? for help."
 		}
@@ -3921,58 +2950,14 @@ Return
 
 ; ====================== WheelScroll fast's 1st method for showing tooltip only once =============================
 CapsLock & WheelDown::
-	Thread, NoTimers 	; Without this, often error occurs: the first-hotkey thread started -> called the SetTimer-subroutine -> the second-hotkey thread started -> before the second one finished, the SetTimer-subroutine started.
-	if (!WheelScroll_fast_lv1_started) {
-		WheelScroll_fast_lv1_started := 1
-		WheelScroll_fast_triggered_time := A_TickCount
-		wheelScroll_speedUp := wheelScroll_speedUp_default
-		loop, % timeStamp_modfr_max{
-			if (WheelScroll_fast_triggered_time - timeStamp_CapsLock_%A_Index% < 1500) { 	;the last CapsLock key right before WheelUp/Down is not listed in timeStamp_CapsLock_%A_Index%
-				wheelScroll_speedUp += wheelScroll_speedUp_default		
-			}
-		}
-	}
-	WinGetClass, wheelScroll_activeClass, A 	; one cheap query instead of enumerating every window (AltTab_window_list) per wheel tick
-	if ((wheelScroll_activeClass = "XLMAIN") and GetKeyState("Shift")) {
-		wheelScroll_speedUp_Excel := wheelScroll_speedUp + wheelScroll_speedUp_default
-		ComObjActive("Excel.Application").ActiveWindow.SmallScroll(0,0, wheelScroll_speedUp_Excel)  ; Scroll right.   (credit: Learning one  https://autohotkey.com/board/topic/35292-horizontal-scroll-in-excel-2007/)
-		if (WheelScroll_fast_lv1_started = 1) {
-			SetTimer, WheelScroll_fast_first, -1
-		}
-	} else {
-		Click WheelDown %wheelScroll_speedUp%
-		if (WheelScroll_fast_lv1_started = 1) {
-			SetTimer, WheelScroll_fast_first, -1 ; Instead of putting this later: SetTimer, WheelScroll_fast_first, off
-		}
-	}
+	Thread, NoTimers 	; keep the WheelScroll_fast_first timer from interleaving with this body
+	WheelScroll_CapsFast(true)
 Return
 
 CapsLock & WheelUp::
-	Thread, NoTimers 	; Without this, often error occurs: the first-hotkey thread started -> called the SetTimer-subroutine -> the second-hotkey thread started -> before the second one finished, the SetTimer-subroutine started.
-	if (!WheelScroll_fast_lv1_started) {
-		WheelScroll_fast_lv1_started := 1
-		WheelScroll_fast_triggered_time := A_TickCount
-		wheelScroll_speedUp := wheelScroll_speedUp_default
-		loop, % timeStamp_modfr_max{
-			if (WheelScroll_fast_triggered_time - timeStamp_CapsLock_%A_Index% < 1500) {
-				wheelScroll_speedUp += wheelScroll_speedUp_default
-			}
-		}
-	}
-	WinGetClass, wheelScroll_activeClass, A 	; one cheap query instead of enumerating every window (AltTab_window_list) per wheel tick
-	if ((wheelScroll_activeClass = "XLMAIN") and GetKeyState("Shift")) {
-		wheelScroll_speedUp_Excel := wheelScroll_speedUp + wheelScroll_speedUp_default
-		ComObjActive("Excel.Application").ActiveWindow.SmallScroll(0,0,0,wheelScroll_speedUp_Excel)  ; Scroll left. (credit: Learning one  https://autohotkey.com/board/topic/35292-horizontal-scroll-in-excel-2007/)
-		if (WheelScroll_fast_lv1_started = 1) {
-			SetTimer, WheelScroll_fast_first, -1
-		}
-	} else {
-		Click WheelUp %wheelScroll_speedUp%
-		if (WheelScroll_fast_lv1_started = 1) {
-			SetTimer, WheelScroll_fast_first, -1
-		}
-	}
-Return	
+	Thread, NoTimers 	; keep the WheelScroll_fast_first timer from interleaving with this body
+	WheelScroll_CapsFast(false)
+Return
 
 
 
@@ -3982,51 +2967,13 @@ Return
 ;#IfWinActive ahk_class OpusApp
 #if WinActive("ahk_class XLMAIN") or WinActive("ahk_class OpusApp")
 	+WheelUp::
-	;+F2::
-		Thread, NoTimers 	; Without this, often error occurs: the first-hotkey thread started -> called the SetTimer-subroutine -> the second-hotkey thread started -> before the second one finished, the SetTimer-subroutine started.
-		if (!WheelScroll_fast_lv1_started) {
-			WheelScroll_fast_lv1_started := 1
-			WheelScroll_fast_triggered_time := A_TickCount
-			wheelScroll_speedUp := 0 ;wheelScroll_speedUp_default
-			loop, % timeStamp_modfr_max{
-				if (WheelScroll_fast_triggered_time - timeStamp_Shift_%A_Index% < 1500) {
-					wheelScroll_speedUp += wheelScroll_speedUp_default
-				}
-			}
-			wheelScroll_speedUp_Excel := wheelScroll_speedUp = 0 ? wheelScroll_speedUp_default : wheelScroll_speedUp
-			wheelScroll_speedUp := wheelScroll_speedUp - wheelScroll_speedUp_default
-		}
-		WinGetClass, wheelScroll_activeClass, A 	; one cheap query instead of enumerating every window per wheel tick
-		ComObjActive((wheelScroll_activeClass = "XLMAIN"? "Excel":"Word") ".Application").ActiveWindow.SmallScroll(0,0,0,wheelScroll_speedUp_Excel)  ; Scroll left
-		if (wheelScroll_speedUp_Excel/wheelScroll_speedUp_default < 2) {
-			WheelScroll_fast_lv1_started := 0
-		} else if (WheelScroll_fast_lv1_started = 1) {
-			SetTimer, WheelScroll_fast_first, -1
-		}
+		Thread, NoTimers 	; keep the WheelScroll_fast_first timer from interleaving with this body
+		WheelScroll_OfficeFast(false)
 	Return
 
 	+WheelDown::
-	;+F3::
-		Thread, NoTimers 	; Without this, often error occurs: the first-hotkey thread started -> called the SetTimer-subroutine -> the second-hotkey thread started -> before the second one finished, the SetTimer-subroutine started.
-		if (!WheelScroll_fast_lv1_started) {
-			WheelScroll_fast_lv1_started := 1
-			WheelScroll_fast_triggered_time := A_TickCount
-			wheelScroll_speedUp := 0 ;wheelScroll_speedUp_default
-			loop, % timeStamp_modfr_max{
-				if (WheelScroll_fast_triggered_time - timeStamp_Shift_%A_Index% < 1500) {
-					wheelScroll_speedUp += wheelScroll_speedUp_default
-				}
-			}
-			wheelScroll_speedUp_Excel := wheelScroll_speedUp = 0 ? wheelScroll_speedUp_default : wheelScroll_speedUp
-			wheelScroll_speedUp := wheelScroll_speedUp - wheelScroll_speedUp_default
-		}
-		WinGetClass, wheelScroll_activeClass, A 	; one cheap query instead of enumerating every window per wheel tick
-		ComObjActive((wheelScroll_activeClass = "XLMAIN"? "Excel":"Word") ".Application").ActiveWindow.SmallScroll(0,0,wheelScroll_speedUp_Excel)  ; Scroll right.
-		if (wheelScroll_speedUp_Excel/wheelScroll_speedUp_default < 2) {
-			WheelScroll_fast_lv1_started := 0
-		} else if (WheelScroll_fast_lv1_started = 1) {
-			SetTimer, WheelScroll_fast_first, -1
-		}
+		Thread, NoTimers 	; keep the WheelScroll_fast_first timer from interleaving with this body
+		WheelScroll_OfficeFast(true)
 	Return
 ;#IfWinActive
 #if
@@ -4461,16 +3408,7 @@ ObjFullyClone(obj) {
     return nobj
 }
 */
-ObjectClone(vObj) { 	; DOENS'T WORK
-	newObj := {}
-	newObj := vObj.clone()
-	For key, value in newObj {
-		if IsObject(value) {
-			newObj.key := ObjectClone(value)
-		}
-	Return newObj
-	}
-}
+; (removed ObjectClone() - it was broken and unused; the ObjFullyClone() recipe in the comment block above is the working approach)
 
 fct_RemoveToolTip_time(_toolTipNo := 0, _update := false) {
     static s_toolTipNo := 0
@@ -4525,6 +3463,8 @@ Show_Windows(vProcessName, vID, girdMode) {
 		monitor_%A_Index%_workarea_center_y := (monitor_%A_Index%_workarea_bottom + monitor_%A_Index%_workarea_top)/2
 		monitor_%A_Index%_grid_no_x := monitor_%A_Index%_workarea_width // 800 		; the numbers of grid along with x axis. 1920/2 = 960, 2560/3 = 853, 1920/800 = 2.xx, 2560/800 = 3.xx, 3840/800 = 4.8
 		monitor_%A_Index%_grid_no_y := monitor_%A_Index%_workarea_height // 450 	; the numbers of grid along with y axis. 1080/2 = 540, 1440/3 = 480, 1080/450 = 2.xx, 1440/450 = 3.xx, 2160/450 = 4.8
+		monitor_%A_Index%_grid_no_x := monitor_%A_Index%_grid_no_x < 1 ? 1 : monitor_%A_Index%_grid_no_x 	; guard: work area narrower than 800 px would otherwise divide by zero below
+		monitor_%A_Index%_grid_no_y := monitor_%A_Index%_grid_no_y < 1 ? 1 : monitor_%A_Index%_grid_no_y 	; guard: work area shorter than 450 px would otherwise divide by zero below
 		monitor_%A_Index%_grid_no_xy := monitor_%A_Index%_grid_no_x * monitor_%A_Index%_grid_no_y 			; the numbers of grids
 		monitor_%A_Index%_grid_width := monitor_%A_Index%_workarea_width / monitor_%A_Index%_grid_no_x 		; width of a grid
 		monitor_%A_Index%_grid_height := monitor_%A_Index%_workarea_height / monitor_%A_Index%_grid_no_y 	; height of a grid
@@ -4540,14 +3480,15 @@ Show_Windows(vProcessName, vID, girdMode) {
 
 
 
+	; When there is no matching window: optionally launch the process, then stop (the layout code below assumes a non-empty list).
+	if (AltTabListSameType.length() < 1) {
+		if (StrLen(vProcessName))
+			Run, % vProcessName
+		Return
+	}
+
 	vClass := AltTabListSameType[1].Class
-	AltTab_List := AltTab_window_list() 
-
-
-	; When there is no File Explorer.
-	if ((AltTabListSameType.length() < 1) and (StrLen(vProcessName))) {
-		Run, % vProcessName
-	} 
+	AltTab_List := AltTab_window_list()
 
 
 	; To send all File Explorers to the bottom if they are on the top currently
@@ -4648,10 +3589,7 @@ Show_Windows(vProcessName, vID, girdMode) {
 					Continue
 				}
 				stillEmptyLoop := 0
-				WinMove, % "ahk_id " AltTabListSameType[counterRvs].ID, 	, monitor_%monitor_no_prm%_workarea_left + monitor_%monitor_no_prm%_grid_width * (loop_1_indexRev - 1)
-																				, monitor_%monitor_no_prm%_workarea_top + monitor_%monitor_no_prm%_grid_height * (loop_2_indexRev - 1)
-																				, monitor_%monitor_no_prm%_grid_width
-																				, monitor_%monitor_no_prm%_grid_height
+				DWM_WinMove("ahk_id " AltTabListSameType[counterRvs].ID, monitor_%monitor_no_prm%_workarea_left + monitor_%monitor_no_prm%_grid_width * (loop_1_indexRev - 1), monitor_%monitor_no_prm%_workarea_top + monitor_%monitor_no_prm%_grid_height * (loop_2_indexRev - 1), monitor_%monitor_no_prm%_grid_width, monitor_%monitor_no_prm%_grid_height)
 				WinSet, AlwaysOnTop, On, % "ahk_id " AltTabListSameType[counterRvs].ID
 				WinSet, AlwaysOnTop, Off, % "ahk_id " AltTabListSameType[counterRvs].ID
 				counterRvs --
@@ -4696,7 +3634,7 @@ Show_Windows(vProcessName, vID, girdMode) {
 			; It's needed to spread windows across all monitors 
 			loop, %monitor_no% {
 				if (monitor_%A_Index%_left <= temp_x + temp_w/2) and (temp_x + temp_w/2 <= monitor_%A_Index%_right - 1) and (monitor_%A_Index%_top <= temp_y + temp_h/2) and (temp_y + temp_h/2 <= monitor_%A_Index%_bottom - 1) {		; monitors' lefts and rights are like 0 ~ 2560, -1920 ~ 0.
-					AltTabListSameType[A_Index].mon := A_Index
+					AltTabListSameType[index].mon := A_Index 	; (A_Index here is the monitor loop's index; "index" is the window index captured above)
 					AltTabListSameType.monitor[A_Index].all_w += temp_w 	; Sum of widths of all File Explorers in each monitor
 					AltTabListSameType.monitor[A_Index].all_h += temp_h 	; Sum of heights of all File Explorers in each monitor
 				}
@@ -5273,4 +4211,199 @@ Show_Windows(vProcessName, vID, girdMode) {
 		}
 	}
 
+}
+
+
+; =====================================================================================
+; ===================== Helper functions (2026-07-05 refactor) ========================
+; =====================================================================================
+
+CollectMonitorInfo() {
+	; Fills the global monitor_* pseudo-arrays used across the script:
+	;   monitor_no, monitor_no_prm,
+	;   monitor_<i>_left/right/top/bottom, monitor_<i>_workarea_left/right/top/bottom,
+	;   monitor_<i>_workarea_width/height/ratio/center_x/center_y
+	global
+	SysGet, monitor_no, MonitorCount
+	SysGet, monitor_no_prm, MonitorPrimary
+	Loop, %monitor_no% {
+	    SysGet, Monitor_%A_Index%_, Monitor, %A_Index%
+	    SysGet, Monitor_%A_Index%_WorkArea_, MonitorWorkArea, %A_Index%
+		monitor_%A_Index%_workarea_width := monitor_%A_Index%_workarea_right - monitor_%A_Index%_workarea_left
+		monitor_%A_Index%_workarea_height := monitor_%A_Index%_workarea_bottom - monitor_%A_Index%_workarea_top
+		monitor_%A_Index%_workarea_ratio := monitor_%A_Index%_workarea_height/monitor_%A_Index%_workarea_width
+		monitor_%A_Index%_workarea_center_x := (monitor_%A_Index%_workarea_right + monitor_%A_Index%_workarea_left)/2
+		monitor_%A_Index%_workarea_center_y := (monitor_%A_Index%_workarea_bottom + monitor_%A_Index%_workarea_top)/2
+	}
+}
+
+CountRecentTaps(vKey, windowMs := 1500) {
+	; Counts how many time stamps of the given modifier (in the timeStamp_<key>_* ring,
+	; written by the ~Alt::/~Control::/~Shift::/~LWin::/~RWin::/CapsLock:: block)
+	; are younger than windowMs. Used by all "tap N times to speed up" features.
+	global
+	crt_count := 0
+	crt_now := A_TickCount
+	loop, % timeStamp_modfr_max {
+		if (crt_now - timeStamp_%vKey%_%A_Index% < windowMs)
+			crt_count++
+	}
+	Return crt_count
+}
+
+Volume_Adjust(delta) {
+	; delta is a relative adjustment string like "+10" or "-1" (SoundSet treats a leading +/- as relative).
+	global SETTING_CONSTANT_TOOLTIPDUR_S
+	SoundSet, %delta%
+	SoundGet, va_volume
+	ToolTip, % "volume: " Round(va_volume)
+	SetTimer, RemoveToolTip, % SETTING_CONSTANT_TOOLTIPDUR_S
+}
+
+WheelScroll_CapsFast(dirDown) {
+	; CapsLock + WheelDown/WheelUp: accelerated scrolling; tap CapsLock repeatedly beforehand to raise the level.
+	; In Excel with Shift held, scrolls horizontally via COM instead.
+	global
+	if (!WheelScroll_fast_lv1_started) {
+		WheelScroll_fast_lv1_started := 1
+		wheelScroll_speedUp := wheelScroll_speedUp_default * (1 + CountRecentTaps("CapsLock")) 	; the last CapsLock press (still held) is not stamped, hence 1 +
+	}
+	WinGetClass, wheelScroll_activeClass, A 	; one cheap query instead of enumerating every window per wheel tick
+	if ((wheelScroll_activeClass = "XLMAIN") and GetKeyState("Shift")) {
+		wheelScroll_speedUp_Excel := wheelScroll_speedUp + wheelScroll_speedUp_default
+		try {
+			if (dirDown)
+				ComObjActive("Excel.Application").ActiveWindow.SmallScroll(0,0, wheelScroll_speedUp_Excel)  ; Scroll right.   (credit: Learning one  https://autohotkey.com/board/topic/35292-horizontal-scroll-in-excel-2007/)
+			else
+				ComObjActive("Excel.Application").ActiveWindow.SmallScroll(0,0,0, wheelScroll_speedUp_Excel)  ; Scroll left.
+		} catch e { 	; COM unavailable (Excel busy/not registered): fall back to plain wheel clicks
+			if (dirDown)
+				Click WheelDown %wheelScroll_speedUp%
+			else
+				Click WheelUp %wheelScroll_speedUp%
+		}
+	} else {
+		if (dirDown)
+			Click WheelDown %wheelScroll_speedUp%
+		else
+			Click WheelUp %wheelScroll_speedUp%
+	}
+	if (WheelScroll_fast_lv1_started = 1)
+		SetTimer, WheelScroll_fast_first, -1
+}
+
+WheelScroll_OfficeFast(dirDown) {
+	; Shift + WheelDown/WheelUp inside Excel/Word (#if context): horizontal scroll via COM;
+	; tap Shift repeatedly beforehand to raise the level.
+	global
+	if (!WheelScroll_fast_lv1_started) {
+		WheelScroll_fast_lv1_started := 1
+		wheelScroll_speedUp := wheelScroll_speedUp_default * CountRecentTaps("Shift")
+		wheelScroll_speedUp_Excel := wheelScroll_speedUp = 0 ? wheelScroll_speedUp_default : wheelScroll_speedUp
+		wheelScroll_speedUp := wheelScroll_speedUp - wheelScroll_speedUp_default
+	}
+	WinGetClass, wheelScroll_activeClass, A
+	try {
+		if (dirDown)
+			ComObjActive((wheelScroll_activeClass = "XLMAIN"? "Excel":"Word") ".Application").ActiveWindow.SmallScroll(0,0,wheelScroll_speedUp_Excel)  ; Scroll right.
+		else
+			ComObjActive((wheelScroll_activeClass = "XLMAIN"? "Excel":"Word") ".Application").ActiveWindow.SmallScroll(0,0,0,wheelScroll_speedUp_Excel)  ; Scroll left.
+	} catch e { 	; COM unavailable: fall back to a plain wheel click
+		if (dirDown)
+			Click WheelDown
+		else
+			Click WheelUp
+	}
+	if (wheelScroll_speedUp_Excel/wheelScroll_speedUp_default < 2) {
+		WheelScroll_fast_lv1_started := 0
+	} else if (WheelScroll_fast_lv1_started = 1) {
+		SetTimer, WheelScroll_fast_first, -1
+	}
+}
+
+ShowHelp(lang) {
+	; Builds the help window (shared by the tray menu items and CapsLock & ?).
+	global AppName, AppVersion, AppUpdateDate, AppSite, AppAuthor, AppAuthorEmail, FLAG_HELP_LANG
+	if (lang = "ko") {
+		guiName := "helpKo"
+		listFile := A_ScriptDir . "\shortcut list-ko.txt"
+		helpTitle := "프로그 컨트롤(FrogControl) 도움말"
+		listLabel := "단축키 목록"
+		authorLabel := "제작자 : " AppAuthor
+		FLAG_HELP_LANG := 2
+	} else {
+		guiName := "helpEn"
+		listFile := A_ScriptDir . "\shortcut list-en.txt"
+		helpTitle := AppName " Help"
+		listLabel := "Shortcut list"
+		authorLabel := "Created by " AppAuthor
+		FLAG_HELP_LANG := 1
+	}
+	Gui, %guiName%: Destroy 	; Gui New does NOT replace an existing same-name window; without this, windows accumulate
+	Gui, %guiName%: New
+	If (!A_IsCompiled && FileExist(A_ScriptDir . "\frog face icon 3.ico")) {
+		Gui, %guiName%: Add, Picture, w40 h40, %A_ScriptDir%\frog face icon 3.ico
+	} else {
+		Gui, %guiName%: Add, Picture, icon1, %A_WorkingDir%\FrogControl.exe
+	}
+	Gui, %guiName%: Font, s15
+	Gui, %guiName%: Add, Text, x+10 yp+10, % helpTitle
+	Gui, %guiName%: Font
+	Gui, %guiName%: Add, Text, xm, % listLabel
+	Gui, %guiName%: Font, , Consolas
+	Gui, %guiName%: Add, ListView, r25 w1111, Hotkey|Action
+	if (!FileExist(listFile)) {
+		LV_Add("", "(file not found)", listFile)
+	} else {
+		Loop, read, %listFile%
+		{
+			inLine_1 := ""
+			inLine_2 := ""
+			Loop, parse, A_LoopReadLine, %A_Tab%
+			{
+				inLine_%A_Index% := A_LoopField
+			}
+			LV_Add("", inLine_1, inLine_2)
+		}
+	}
+	LV_ModifyCol()  ; Auto-size each column to fit its contents.
+
+	Gui, %guiName%: Font
+	Gui, %guiName%: Add, Text,,
+	Gui, %guiName%: Add, Text, xm, % "Version " AppVersion " (" AppUpdateDate ")"
+	Gui, %guiName%: Add, Link, y+3, % "<a href=""" AppSite """>" AppSite "</a>"
+	Gui, %guiName%: Add, Text, x+10 yp+10,
+	Gui, %guiName%: Font
+	Gui, %guiName%: Add, Text, xm, % authorLabel
+	Gui, %guiName%: Add, Link, y+3, % "<a href=""mailto:" AppAuthorEmail """>" AppAuthorEmail "</a>"
+	Gui, %guiName%: Font
+	Gui, %guiName%: Add, Text, y+0, `t
+	Gui, %guiName%: Add, Button, GABOUTOK Default w75, &OK
+	GuiControl, Focus, &OK
+	Gui, %guiName%: Show, , FrogControl Help
+}
+
+DWM_WinMove(winTitle, x := "", y := "", w := "", h := "") {
+	; Moves/resizes a window so its VISIBLE frame (DWMWA_EXTENDED_FRAME_BOUNDS) lands exactly on the
+	; given rectangle, compensating for the invisible resize borders of Windows 10/11 (~7 px per side).
+	; Empty parameters leave that dimension unchanged, like WinMove. Used by the snap/grid placements.
+	hwnd := WinExist(winTitle)
+	if (!hwnd)
+		Return
+	VarSetCapacity(rect, 16, 0)
+	VarSetCapacity(ext, 16, 0)
+	DllCall("GetWindowRect", "Ptr", hwnd, "Ptr", &rect)
+	if (DllCall("dwmapi\DwmGetWindowAttribute", "Ptr", hwnd, "UInt", 9, "Ptr", &ext, "UInt", 16) != 0) { 	; 9 = DWMWA_EXTENDED_FRAME_BOUNDS
+		WinMove, ahk_id %hwnd%, , %x%, %y%, %w%, %h% 	; DWM info unavailable: behave like a plain WinMove
+		Return
+	}
+	bL := NumGet(ext, 0, "Int") - NumGet(rect, 0, "Int")
+	bT := NumGet(ext, 4, "Int") - NumGet(rect, 4, "Int")
+	bR := NumGet(rect, 8, "Int") - NumGet(ext, 8, "Int")
+	bB := NumGet(rect, 12, "Int") - NumGet(ext, 12, "Int")
+	nx := (x = "") ? "" : x - bL
+	ny := (y = "") ? "" : y - bT
+	nw := (w = "") ? "" : w + bL + bR
+	nh := (h = "") ? "" : h + bT + bB
+	WinMove, ahk_id %hwnd%, , %nx%, %ny%, %nw%, %nh%
 }
