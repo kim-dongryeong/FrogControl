@@ -4,6 +4,20 @@ history
 (older entries consolidated from the history.txt files kept alongside pre-git versions
  in "K:\My Drive\_MainDrive\software-portable\AutoHotKey\dk-my macro")
 
+2.1.2 (2026-07-06)
+Finish the Ctrl+W-becomes-Ctrl+Shift+W fix. 2.1.1's SendInput closed the typematic race but
+fast repeated Ctrl+Shift+RightClick still occasionally closed the whole Chrome window: the
+modifier restore ({Shift down}) rode in the SAME atomic batch as the keystroke, and Chrome
+(which drains the message queue before handling, reading GetKeyState as of the last retrieved
+message) saw the restored Shift on the key it was about to process. Fix: send in {Blind} mode,
+which keeps the physically-held wanted modifier (Ctrl/Alt) and drops only the contaminant
+(Shift), and END the batch with the contaminant UP - no in-batch restore. The physical key the
+user is still holding re-asserts itself via typematic repeat, so nothing sticks.
+- ^+RButton:  SendInput ^w        -> SendInput {Blind}{Shift Up}w
+- ^+!RButton: SendInput !{F4}      -> SendInput {Blind}{Ctrl Up}{Shift Up}{F4}
+- ^+Wheel:    SendInput ^{PgDn/Up} -> SendInput {Blind}{Shift Up}{PgDn/PgUp}
+(The C# port got the equivalent deferred-restore treatment in commit 217d668.)
+
 2.1.1 (2026-07-06)
 Fix the modifier typematic race in the tab/window-close and tab-switch sends. While the user
 physically holds Ctrl+Shift, the keyboard auto-repeats the modifier key-down every ~33 ms;

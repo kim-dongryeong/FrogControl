@@ -14,7 +14,7 @@ AppName 		:= "FrogControl"
 AppAuthor 		:= "Kim Dongryeong"
 AppAuthorEmail	:= "kdr@namouli.com"
 AppUpdateDate 	:= "2026-07-06"
-AppVersion 		:= "2.1.1"
+AppVersion 		:= "2.1.2"
 AppSite			:= "https://github.com/kim-dongryeong/FrogControl"
 
 ; ---------------------------------------------------------------
@@ -267,9 +267,15 @@ Return
 	WinActivate, ahk_id %mousewin%
 	WinWaitActive, ahk_id %mousewin%, , 0.5 	; timeout: without it this thread could hang forever with the beep left disabled
 	if (!ErrorLevel)
-		SendInput, ^w 	; SendInput, not SendEvent: one atomic batch, so the held Shift's typematic
-						; auto-repeat (~33 ms) can't slip between the synthetic Shift-up and the W-down
-						; and turn Ctrl+W into Ctrl+Shift+W (Chrome: closes the WHOLE window, not a tab)
+		SendInput, {Blind}{Shift Up}w 	; {Blind}: keep the physically-held Ctrl, drop only the held
+						; Shift, and send w with the current modifiers = a CLEAN Ctrl+W. Ending the
+						; batch with Shift UP (no in-batch restore) is the key: Chrome drains the
+						; message queue before handling, reading GetKeyState as of the last RETRIEVED
+						; message, so a restored {Shift down} in the same batch would still make it
+						; see Ctrl+Shift+W (= close the WHOLE window). The physical Shift the user is
+						; still holding re-asserts itself via typematic repeat right after, so it's
+						; not left stuck. Plain SendEvent/`^w` had both the queue-drain leak and the
+						; typematic race - this closes both, even on fast repeated clicks.
 	;WinActivate, ahk_id %var_id%  	; if it's presented, minor error: no tab closed.  -> What I meant before?
 	DllCall("SystemParametersInfo", UInt, 0x0002, UInt, beep_rbtn, UInt,0, UInt,0) 	; SPI_SETBEEP : 0x0002
 return
@@ -284,7 +290,8 @@ return
 	WinActivate, ahk_id %mousewin%
 	WinWaitActive, ahk_id %mousewin%, , 0.5 	; timeout: without it this thread could wait forever
 	if (!ErrorLevel)
-		SendInput, !{F4} 	; atomic batch: the held Ctrl/Shift can't re-assert mid-send (same race as ^w above)
+		SendInput, {Blind}{Ctrl Up}{Shift Up}{F4} 	; keep the physically-held Alt, drop Ctrl+Shift,
+						; and no in-batch restore -> a clean Alt+F4 that fast clicks can't corrupt (see ^w above)
 Return
 
 #^+!RButton::
@@ -659,13 +666,14 @@ return
 ; ================= Ctrl + Page up/down effect ==================== starts ==============================
 ;^+]:: 	; not good becuase of Photoshop
 ^+WheelDown::
-	SendInput, ^{PgDn} 	; atomic: the physically-held Shift can't contaminate this into
-						; Ctrl+Shift+PgDn (Chrome: MOVES the tab instead of switching to it)
+	SendInput, {Blind}{Shift Up}{PgDn} 	; {Blind}: keep the physically-held Ctrl, drop only the
+						; held Shift, no in-batch restore -> a clean Ctrl+PgDn (Ctrl+Shift+PgDn would
+						; MOVE the tab in Chrome instead of switching). Same fix pattern as ^w above.
 Return
 
 ;^+[:: 	; not good becuase of Photoshop
 ^+WheelUp::
-	SendInput, ^{PgUp} 	; atomic (see ^+WheelDown)
+	SendInput, {Blind}{Shift Up}{PgUp} 	; clean Ctrl+PgUp (see ^+WheelDown)
 Return
 ; ================= Ctrl + Page up/down effect ==================== ends ==============================
 
