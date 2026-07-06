@@ -54,38 +54,80 @@ public static class InputSimulator
         return false;
     }
 
+    /// <summary>Fold L/R modifier VKs onto one identity so "chord needs Ctrl" matches a held LCtrl.</summary>
+    private static ushort ToGenericMod(ushort vk) => vk switch
+    {
+        Win32.VK_LSHIFT or Win32.VK_RSHIFT => (ushort)Win32.VK_SHIFT,
+        Win32.VK_LCONTROL or Win32.VK_RCONTROL => (ushort)Win32.VK_CONTROL,
+        Win32.VK_LMENU or Win32.VK_RMENU => (ushort)Win32.VK_MENU,
+        Win32.VK_LWIN or Win32.VK_RWIN => (ushort)Win32.VK_LWIN,   // treat both Win keys as one
+        _ => vk,
+    };
+
+    private static readonly object IsolatedSync = new();
+
     /// <summary>
     /// Send a clean chord (only <paramref name="modifiers"/> active) even while the user is
-    /// physically holding other modifiers — like AHK's Send, which lifts the held modifiers.
-    /// The whole sequence (lift, chord, restore) goes out in ONE SendInput batch: Windows
-    /// guarantees the events of a single call are not interspersed with physical input, so a
-    /// typematic Shift repeat cannot slip between our "Shift up" and the key-down. The hook
-    /// guard above additionally swallows repeats that arrive while the batch is being consumed.
+    /// physically holding other modifiers. Like AHK's Send:
+    ///  - modifiers the chord NEEDS that are already physically down are left alone,
+    ///  - contaminating ones are lifted, so the batch is minimal (e.g. Shift-up, W-down, W-up).
+    /// The batch goes out in ONE SendInput call (atomic against physical input), and the lifted
+    /// modifiers are restored in a SECOND batch after a short delay: apps that drain the message
+    /// queue before handling (Chrome's pump) read GetKeyState as of the last RETRIEVED message,
+    /// so an in-batch restore could still contaminate the key they were about to handle.
+    /// The hook guard swallows the lifted keys' typematic re-assertions for the whole window,
+    /// and the lock serialises overlapping sends (rapid clicks) so one send's restore cannot
+    /// land inside another's lift-to-key gap.
     /// </summary>
     public static void KeyComboIsolated(ushort key, params ushort[] modifiers)
     {
-        // Which modifiers is the user physically holding right now?
-        var held = new List<ushort>();
-        foreach (var m in AllModVks)
-            if ((Win32.GetAsyncKeyState(m) & 0x8000) != 0)
-                held.Add(m);
+        lock (IsolatedSync)
+        {
+            // Physically-held modifiers the chord does NOT need -> lift them.
+            var lift = new List<ushort>();
+            foreach (var m in AllModVks)
+            {
+                if ((Win32.GetAsyncKeyState(m) & 0x8000) == 0) continue;
+                bool neededByChord = false;
+                foreach (var cm in modifiers)
+                    if (ToGenericMod(m) == ToGenericMod(cm)) { neededByChord = true; break; }
+                if (!neededByChord) lift.Add(m);
+            }
+            // Chord modifiers not already physically down -> we must press (and release) them.
+            var press = new List<ushort>();
+            foreach (var cm in modifiers)
+                if ((Win32.GetAsyncKeyState(cm) & 0x8000) == 0) press.Add(cm);
 
-        // Arm the hook guard BEFORE injecting (only key-downs of the lifted keys are
-        // swallowed; releasing them still passes through, so nothing can get stuck).
-        _guardedVks = held.ToArray();
-        Volatile.Write(ref _guardUntilTick, Environment.TickCount + 150);
+            int delayMs = Math.Clamp(FrogControl.App.Settings.IsolatedSendRestoreDelayMs, 0, 500);
 
-        var seq = new List<Win32.INPUT>(held.Count * 2 + modifiers.Length * 2 + 2);
-        foreach (var m in held) seq.Add(MakeKeyInput(m, up: true));            // lift held
-        foreach (var m in modifiers) seq.Add(MakeKeyInput(m, up: false));      // chord down
-        seq.Add(MakeKeyInput(key, up: false));
-        seq.Add(MakeKeyInput(key, up: true));
-        for (int i = modifiers.Length - 1; i >= 0; i--) seq.Add(MakeKeyInput(modifiers[i], up: true));
-        foreach (var m in held) seq.Add(MakeKeyInput(m, up: false));           // restore held
-        // (If the user releases a key mid-batch, the physical key-up is queued AFTER the
-        //  batch — it lands after our restore-down, leaving the key correctly up.)
+            // Arm the hook guard through batch + delay + margin (downs of lifted keys are
+            // swallowed; ups always pass, so nothing can get stuck).
+            _guardedVks = lift.ToArray();
+            Volatile.Write(ref _guardUntilTick, Environment.TickCount + delayMs + 150);
 
-        Win32.SendInput((uint)seq.Count, seq.ToArray(), System.Runtime.InteropServices.Marshal.SizeOf<Win32.INPUT>());
+            // Batch 1: lift, press missing chord modifiers, tap the key, release what we pressed.
+            var seq = new List<Win32.INPUT>(lift.Count + press.Count * 2 + 2);
+            foreach (var m in lift) seq.Add(MakeKeyInput(m, up: true));
+            foreach (var m in press) seq.Add(MakeKeyInput(m, up: false));
+            seq.Add(MakeKeyInput(key, up: false));
+            seq.Add(MakeKeyInput(key, up: true));
+            for (int i = press.Count - 1; i >= 0; i--) seq.Add(MakeKeyInput(press[i], up: true));
+            Win32.SendInput((uint)seq.Count, seq.ToArray(), System.Runtime.InteropServices.Marshal.SizeOf<Win32.INPUT>());
+
+            if (lift.Count == 0)
+                return;
+
+            // Batch 2 (deferred): restore the lifted modifiers the user is STILL holding.
+            // (KeyState tracks physical state via the hook; if the user released the key during
+            //  the delay, the physical up passed through and cleared it -> no restore, no stick.)
+            Thread.Sleep(delayMs);
+            var restore = new List<Win32.INPUT>(lift.Count);
+            foreach (var m in lift)
+                if (KeyState.IsDown(m))
+                    restore.Add(MakeKeyInput(m, up: false));
+            if (restore.Count > 0)
+                Win32.SendInput((uint)restore.Count, restore.ToArray(), System.Runtime.InteropServices.Marshal.SizeOf<Win32.INPUT>());
+        }
     }
 
     private static Win32.INPUT MakeKeyInput(ushort vk, bool up)

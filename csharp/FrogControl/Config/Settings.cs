@@ -51,6 +51,14 @@ public sealed class Settings
     /// <summary>Window-rotation "popup" mode was marked unstable in AHK; keep it available but toggleable.</summary>
     public bool EnableUnstableRotation { get; set; } = true;
 
+    /// <summary>
+    /// Isolated sends (Ctrl+Shift+RightClick close-tab etc.) restore the lifted modifiers this
+    /// many ms AFTER the keystroke, so queue-draining apps (Chrome) can't read the restored
+    /// Shift into the key they are about to handle. Raise to 80-100 if a heavily-loaded app
+    /// still occasionally sees Ctrl+Shift+W instead of Ctrl+W.
+    /// </summary>
+    public int IsolatedSendRestoreDelayMs { get; set; } = 40;
+
     // ---- Load / save ----
     public static Settings Load()
     {
