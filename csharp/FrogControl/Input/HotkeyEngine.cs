@@ -264,14 +264,24 @@ public sealed class HotkeyEngine : IDisposable
     // =====================================================================
     // Mouse
     // =====================================================================
+    // A suppressed button-DOWN must also swallow the matching button-UP: a lone
+    // WM_RBUTTONUP makes DefWindowProc fire WM_CONTEXTMENU, so the context menu popped
+    // up alongside Ctrl+Shift+RightClick and ate the next click. (AHK mouse hotkeys
+    // suppress the down/up pair automatically; we do it explicitly.)
+    private bool _swallowNextLUp;
+    private bool _swallowNextRUp;
+
     private void OnMouse(MouseHookEventArgs e)
     {
         if (e.IsInjected) return;
         if (FrogControl.App.Suspended) return;
 
-        // Swallow the button-up that ends an active caps-drag so the app never sees a lone up.
-        if (e.Kind == MouseEventKind.LeftUp && MouseDragMove.Active) { e.Handled = true; return; }
-        if (e.Kind == MouseEventKind.RightUp && MouseDragResize.Active) { e.Handled = true; return; }
+        // Swallow the button-up matching a suppressed down (drag or click combo). The explicit
+        // flags also cover the race where the drag loop clears .Active before this up arrives.
+        if (e.Kind == MouseEventKind.LeftUp && (_swallowNextLUp || MouseDragMove.Active))
+        { _swallowNextLUp = false; e.Handled = true; return; }
+        if (e.Kind == MouseEventKind.RightUp && (_swallowNextRUp || MouseDragResize.Active))
+        { _swallowNextRUp = false; e.Handled = true; return; }
 
         bool win = KeyState.Win, alt = KeyState.Alt, ctrl = KeyState.Ctrl, shift = KeyState.Shift, caps = KeyState.Caps;
 
@@ -291,11 +301,13 @@ public sealed class HotkeyEngine : IDisposable
                     _capsComboUsed = true;
                     if (!MouseDragMove.Active)
                         FrogControl.App.RunDetached("dragMove", MouseDragMove.Start);
+                    _swallowNextLUp = true;
                     e.Handled = true;
                 }
                 else if (win)
                 {
                     FrogControl.App.Run(WindowOps.ToggleAlwaysOnTopUnderMouse);
+                    _swallowNextLUp = true;
                     e.Handled = true;
                 }
                 return;
@@ -307,10 +319,12 @@ public sealed class HotkeyEngine : IDisposable
                     _capsComboUsed = true;
                     if (!MouseDragResize.Active)
                         FrogControl.App.RunDetached("dragResize", MouseDragResize.Start);
+                    _swallowNextRUp = true;
                     e.Handled = true;
                 }
                 else if (HandleRightClick(win, alt, ctrl, shift))
                 {
+                    _swallowNextRUp = true;
                     e.Handled = true;
                 }
                 return;
