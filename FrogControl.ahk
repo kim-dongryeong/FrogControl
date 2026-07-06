@@ -13,8 +13,8 @@
 AppName 		:= "FrogControl"
 AppAuthor 		:= "Kim Dongryeong"
 AppAuthorEmail	:= "kdr@namouli.com"
-AppUpdateDate 	:= "2026-07-05"
-AppVersion 		:= "2.1.0"
+AppUpdateDate 	:= "2026-07-06"
+AppVersion 		:= "2.1.1"
 AppSite			:= "https://github.com/kim-dongryeong/FrogControl"
 
 ; ---------------------------------------------------------------
@@ -267,7 +267,9 @@ Return
 	WinActivate, ahk_id %mousewin%
 	WinWaitActive, ahk_id %mousewin%, , 0.5 	; timeout: without it this thread could hang forever with the beep left disabled
 	if (!ErrorLevel)
-		SendEvent, ^w
+		SendInput, ^w 	; SendInput, not SendEvent: one atomic batch, so the held Shift's typematic
+						; auto-repeat (~33 ms) can't slip between the synthetic Shift-up and the W-down
+						; and turn Ctrl+W into Ctrl+Shift+W (Chrome: closes the WHOLE window, not a tab)
 	;WinActivate, ahk_id %var_id%  	; if it's presented, minor error: no tab closed.  -> What I meant before?
 	DllCall("SystemParametersInfo", UInt, 0x0002, UInt, beep_rbtn, UInt,0, UInt,0) 	; SPI_SETBEEP : 0x0002
 return
@@ -282,7 +284,7 @@ return
 	WinActivate, ahk_id %mousewin%
 	WinWaitActive, ahk_id %mousewin%, , 0.5 	; timeout: without it this thread could wait forever
 	if (!ErrorLevel)
-		SendEvent, !{F4}
+		SendInput, !{F4} 	; atomic batch: the held Ctrl/Shift can't re-assert mid-send (same race as ^w above)
 Return
 
 #^+!RButton::
@@ -657,12 +659,13 @@ return
 ; ================= Ctrl + Page up/down effect ==================== starts ==============================
 ;^+]:: 	; not good becuase of Photoshop
 ^+WheelDown::
-	Send, ^{PgDn}
+	SendInput, ^{PgDn} 	; atomic: the physically-held Shift can't contaminate this into
+						; Ctrl+Shift+PgDn (Chrome: MOVES the tab instead of switching to it)
 Return
 
 ;^+[:: 	; not good becuase of Photoshop
 ^+WheelUp::
-	Send, ^{PgUp}
+	SendInput, ^{PgUp} 	; atomic (see ^+WheelDown)
 Return
 ; ================= Ctrl + Page up/down effect ==================== ends ==============================
 

@@ -4,6 +4,19 @@ history
 (older entries consolidated from the history.txt files kept alongside pre-git versions
  in "K:\My Drive\_MainDrive\software-portable\AutoHotKey\dk-my macro")
 
+2.1.1 (2026-07-06)
+Fix the modifier typematic race in the tab/window-close and tab-switch sends. While the user
+physically holds Ctrl+Shift, the keyboard auto-repeats the modifier key-down every ~33 ms;
+SendEvent's per-event delays let a repeat slip between the synthetic Shift-up and the W-down,
+so the target app occasionally saw Ctrl+Shift+W (Chrome: closes the WHOLE window instead of
+one tab). Switched the affected sends to SendInput, whose single atomic batch cannot be
+interleaved with physical input:
+- Ctrl+Shift+RightClick: SendEvent ^w -> SendInput ^w
+- Ctrl+Shift+Alt+RightClick: SendEvent !{F4} -> SendInput !{F4}
+- Ctrl+Shift+Wheel: Send ^{PgDn}/^{PgUp} -> SendInput (a contaminated Ctrl+Shift+PgDn MOVES
+  the tab in Chrome instead of switching)
+(The same bug was found and fixed in the C# port first; see the port entry below.)
+
 C# (.NET) native port (2026-07-06)
 Added csharp/ - a faithful C# / .NET 8 (WinForms) rewrite of the whole script as a native
 Windows tray application. Uses global low-level keyboard/mouse hooks (WH_KEYBOARD_LL /
