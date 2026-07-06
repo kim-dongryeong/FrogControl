@@ -131,18 +131,14 @@ public static class WindowOps
     }
 
     // ---- Misc sends ----
-    public static void CtrlPageDown() => InputSimulator.KeyCombo(0x22 /*PgDn*/, Win32.VK_CONTROL);
-    public static void CtrlPageUp() => InputSimulator.KeyCombo(0x21 /*PgUp*/, Win32.VK_CONTROL);
+    // Isolated: these fire while the user physically holds Ctrl+Shift (wheel hotkey), and a
+    // contaminated Ctrl+Shift+PgDn MOVES the tab in Chrome instead of switching to it.
+    public static void CtrlPageDown() => InputSimulator.KeyComboIsolated(0x22 /*PgDn*/, Win32.VK_CONTROL);
+    public static void CtrlPageUp() => InputSimulator.KeyComboIsolated(0x21 /*PgUp*/, Win32.VK_CONTROL);
 
-    /// <summary>#^!+1 / ^!+2 : switch to the next virtual desktop (RWin+Ctrl+Right).</summary>
+    /// <summary>#^!+1 / ^!+2 : switch to the next virtual desktop (RWin+Ctrl+Right), clean of held Alt/Shift.</summary>
     public static void VirtualDesktopRight()
-    {
-        InputSimulator.KeyDown((ushort)Win32.VK_RWIN);
-        InputSimulator.KeyDown((ushort)Win32.VK_CONTROL);
-        InputSimulator.KeyPress((ushort)Win32.VK_RIGHT);
-        InputSimulator.KeyUp((ushort)Win32.VK_CONTROL);
-        InputSimulator.KeyUp((ushort)Win32.VK_RWIN);
-    }
+        => InputSimulator.KeyComboIsolated((ushort)Win32.VK_RIGHT, (ushort)Win32.VK_RWIN, Win32.VK_CONTROL);
 
     public static void ShowAltTabList()
     {

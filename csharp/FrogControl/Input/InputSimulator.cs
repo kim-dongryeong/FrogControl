@@ -36,33 +36,64 @@ public static class InputSimulator
         Win32.VK_LMENU, Win32.VK_RMENU, Win32.VK_LWIN, Win32.VK_RWIN,
     };
 
+    // ---- Guard against typematic re-assertion during an isolated send -------------------
+    // While the user physically holds a modifier, the keyboard auto-repeats its key-down
+    // every ~33 ms. If such a repeat lands between our synthetic "Shift up" and "W down",
+    // the target app sees Ctrl+Shift+W instead of Ctrl+W (Chrome: close WINDOW, not tab).
+    // The keyboard hook consults ShouldSuppressPhysicalRepeat() and swallows exactly those
+    // re-assertions for a short window around the send.
+    private static volatile ushort[] _guardedVks = Array.Empty<ushort>();
+    private static int _guardUntilTick;
+
+    public static bool ShouldSuppressPhysicalRepeat(int vk)
+    {
+        if (Environment.TickCount - Volatile.Read(ref _guardUntilTick) >= 0)
+            return false;   // guard expired
+        foreach (var g in _guardedVks)
+            if (g == vk) return true;
+        return false;
+    }
+
     /// <summary>
     /// Send a clean chord (only <paramref name="modifiers"/> active) even while the user is
-    /// physically holding other modifiers — mirrors AHK's Send, which temporarily lifts the
-    /// held modifiers so e.g. Ctrl+W isn't corrupted into Ctrl+Shift+W by a held Shift.
+    /// physically holding other modifiers — like AHK's Send, which lifts the held modifiers.
+    /// The whole sequence (lift, chord, restore) goes out in ONE SendInput batch: Windows
+    /// guarantees the events of a single call are not interspersed with physical input, so a
+    /// typematic Shift repeat cannot slip between our "Shift up" and the key-down. The hook
+    /// guard above additionally swallows repeats that arrive while the batch is being consumed.
     /// </summary>
     public static void KeyComboIsolated(ushort key, params ushort[] modifiers)
     {
-        // Lift every physically-held modifier so it can't contaminate the send.
+        // Which modifiers is the user physically holding right now?
         var held = new List<ushort>();
         foreach (var m in AllModVks)
             if ((Win32.GetAsyncKeyState(m) & 0x8000) != 0)
                 held.Add(m);
-        foreach (var m in held) KeyUp(m);
 
-        KeyCombo(key, modifiers);
+        // Arm the hook guard BEFORE injecting (only key-downs of the lifted keys are
+        // swallowed; releasing them still passes through, so nothing can get stuck).
+        _guardedVks = held.ToArray();
+        Volatile.Write(ref _guardUntilTick, Environment.TickCount + 150);
 
-        // Restore the modifiers the user is (still) holding.
-        foreach (var m in held) KeyDown(m);
+        var seq = new List<Win32.INPUT>(held.Count * 2 + modifiers.Length * 2 + 2);
+        foreach (var m in held) seq.Add(MakeKeyInput(m, up: true));            // lift held
+        foreach (var m in modifiers) seq.Add(MakeKeyInput(m, up: false));      // chord down
+        seq.Add(MakeKeyInput(key, up: false));
+        seq.Add(MakeKeyInput(key, up: true));
+        for (int i = modifiers.Length - 1; i >= 0; i--) seq.Add(MakeKeyInput(modifiers[i], up: true));
+        foreach (var m in held) seq.Add(MakeKeyInput(m, up: false));           // restore held
+        // (If the user releases a key mid-batch, the physical key-up is queued AFTER the
+        //  batch — it lands after our restore-down, leaving the key correctly up.)
+
+        Win32.SendInput((uint)seq.Count, seq.ToArray(), System.Runtime.InteropServices.Marshal.SizeOf<Win32.INPUT>());
     }
 
-    private static void SendKey(ushort vk, bool up)
+    private static Win32.INPUT MakeKeyInput(ushort vk, bool up)
     {
         bool extended = IsExtendedKey(vk);
         uint flags = up ? Win32.KEYEVENTF_KEYUP : 0;
         if (extended) flags |= Win32.KEYEVENTF_EXTENDEDKEY;
-
-        var inp = new Win32.INPUT
+        return new Win32.INPUT
         {
             type = Win32.INPUT_KEYBOARD,
             U = new Win32.InputUnion
@@ -77,6 +108,11 @@ public static class InputSimulator
                 }
             }
         };
+    }
+
+    private static void SendKey(ushort vk, bool up)
+    {
+        var inp = MakeKeyInput(vk, up);
         Win32.SendInput(1, new[] { inp }, System.Runtime.InteropServices.Marshal.SizeOf<Win32.INPUT>());
     }
 

@@ -15,6 +15,13 @@ as switches in frogcontrol.settings.json (MouseMoveBackend, ActivationBackend, S
 CapsLockTapToggles, EnableUnstableRotation) so they can be tested without recompiling. Build/run
 with csharp/build.ps1; standalone .exe with csharp/publish.ps1. See csharp/README.md for details.
 The AutoHotkey build (FrogControl.ahk) is unchanged and remains authoritative.
+Post-release fixes (2026-07-06): window activation (GetCurrentThreadId was P/Invoked from
+user32 instead of kernel32, silently breaking every activate); case-insensitive same-type
+matching (Shift+F1..F4 arrange); isolated sends are now one atomic SendInput batch plus a
+hook guard that swallows typematic modifier re-assertions - a held Ctrl+Shift can no longer
+corrupt Ctrl+W into Ctrl+Shift+W (Chrome closed the whole window; the AHK build's SendEvent
+has the same race). Ctrl+Shift+Wheel tab switching and virtual-desktop send got the same
+treatment. Added csharp/FrogControl.SmokeTests (52 integration checks, all passing).
 
 2.1.0 (2026-07-05)
 Deduplication milestone: the whole refactor backlog is done. FrogControl.ahk now holds only

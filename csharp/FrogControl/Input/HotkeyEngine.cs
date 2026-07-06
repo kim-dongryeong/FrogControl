@@ -50,6 +50,14 @@ public sealed class HotkeyEngine : IDisposable
     {
         if (e.IsInjected) return;
 
+        // Typematic re-assertion of a modifier the isolated-send just lifted: swallow it so
+        // a held Shift can't corrupt Ctrl+W into Ctrl+Shift+W mid-send (see KeyComboIsolated).
+        if (e.IsKeyDown && InputSimulator.ShouldSuppressPhysicalRepeat(e.Vk))
+        {
+            e.Handled = true;
+            return;
+        }
+
         // Route to an active modal mode (date/time input, mouse control).
         var channel = ModeHost.ActiveChannel;
         if (channel != null)
