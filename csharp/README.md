@@ -128,4 +128,4 @@ The dispatch table lives in `Input/HotkeyEngine.cs` — start there to trace any
 ---
 
 Free software under the **GNU GPL v3** (same licence as the rest of FrogControl).
-Created by Kim Dongryeong &lt;kdr@namouli.com&gt;.
+Created by Kim Dongryeong &lt;kdr@kdr.kr&gt;.

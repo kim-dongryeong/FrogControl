@@ -5,7 +5,7 @@ public static class AppInfo
 {
     public const string Name = "FrogControl";
     public const string Author = "Kim Dongryeong";
-    public const string AuthorEmail = "kdr@namouli.com";
+    public const string AuthorEmail = "kdr@kdr.kr";
     public const string UpdateDate = "2026-07-05";
     public const string Version = "2.1.0";
     public const string Site = "https://github.com/kim-dongryeong/FrogControl";
